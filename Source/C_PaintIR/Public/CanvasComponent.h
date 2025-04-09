@@ -4,17 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
-#include "Capture.generated.h"
+#include "CanvasComponent.generated.h"
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class C_PAINTIR_API UCapture : public USceneComponent
+class C_PAINTIR_API UCanvasComponent : public USceneComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UCapture();
+	UCanvasComponent();
 
 protected:
 	// Called when the game starts

@@ -1,10 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "C_PaintIR/Public/MeshManager.h"
+#include "MyStaticMeshActor.h"
 #include "Engine/ObjectLibrary.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
-#include "Engine/StaticMeshActor.h"
+
 
 UMeshManager::UMeshManager()
 {
@@ -45,7 +46,7 @@ void UMeshManager::LoadMeshes(const FString& AssetPath)
 				FVector ActorLocation = StartLocation + FVector(Index * OffsetX, 0.f, 0.f);
 
 				// 在世界中生成一个新的 AStaticMeshActor
-				AStaticMeshActor* NewActor = World->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), ActorLocation, FRotator::ZeroRotator);
+				AMyStaticMeshActor* NewActor = World->SpawnActor<AMyStaticMeshActor>(AMyStaticMeshActor::StaticClass(), ActorLocation, FRotator::ZeroRotator);
 				if (NewActor)
 				{
 					// 设置 Actor 的静态网格体
