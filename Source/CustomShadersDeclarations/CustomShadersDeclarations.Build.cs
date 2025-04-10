@@ -10,6 +10,10 @@ public class CustomShadersDeclarations : ModuleRules
             new string[]
             {
                 "Core",
+                "Renderer",
+                "RenderCore",
+                "RHI",
+                "Projects"
             }
         );
 

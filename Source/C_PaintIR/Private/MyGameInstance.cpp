@@ -21,8 +21,4 @@ void UMyGameInstance::Init()
 	//}
 
 	// 在屏幕上显示调试消息
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("UMyGameInstance::Init() called"));
-	}
 }

@@ -2,10 +2,14 @@
 
 
 #include "MyGameModeBase.h"
-#include "C_PaintIR/Public/MyGameModeBase.h"
-
 #include "MyGameInstance.h" // 引入 GameInstance 头文件
-#include "C_PaintIR/Public/MyGameInstance.h"
+#include "MyPlayerController.h"
+
+
+AMyGameModeBase::AMyGameModeBase()
+{
+	PlayerControllerClass = AMyPlayerController::StaticClass(); // 设置自定义 PlayerController
+}
 
 void AMyGameModeBase::BeginPlay()
 {
