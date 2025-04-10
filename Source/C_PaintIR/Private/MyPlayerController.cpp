@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "MyPlayerController.h"
+#include "MyStaticMeshActor.h"
 
 AMyPlayerController::AMyPlayerController()
 {
@@ -21,20 +21,21 @@ void AMyPlayerController::SetupInputComponent()
 
 void AMyPlayerController::HandleLeftClick()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("被调用了！"));
-
 	FHitResult HitResult;
 	if (GetHitResultUnderCursor(ECC_Visibility, true, HitResult))
 	{
-		FVector HitLocation = HitResult.Location;
-
-		// 将点击位置转换为字符串
-		FString HitLocationStr = HitLocation.ToString();
-
-		// 在屏幕上显示点击位置
-		if (GEngine)
+		AActor* HitActor = HitResult.GetActor();
+		FVector WorldHitLocation = HitResult.Location;
+		if (HitActor)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Clicked at location: %s"), *HitLocationStr));
+			// 检查被点击的 Actor 是否是 AMyStaticMeshActor 的实例
+			AMyStaticMeshActor* MyStaticMeshActor = Cast<AMyStaticMeshActor>(HitActor);
+			if (MyStaticMeshActor && MyStaticMeshActor->CanvasComponent)
+			{
+				// 调用 CanvasComponent 的功能，例如绘制内容
+				MyStaticMeshActor->CanvasComponent->DrawPoint(WorldHitLocation);
+				// 或其他 CanvasComponent 的方法
+			}
 		}
 	}
 }

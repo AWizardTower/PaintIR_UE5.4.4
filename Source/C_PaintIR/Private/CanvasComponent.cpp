@@ -32,3 +32,11 @@ void UCanvasComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	// ...
 }
 
+void UCanvasComponent::DrawPoint(const FVector& WorldLocation)
+{
+	// 将世界坐标转换为组件的局部坐标
+	FVector LocalLocation = GetComponentTransform().InverseTransformPosition(WorldLocation);
+	// 输出局部坐标
+	UE_LOG(LogTemp, Log, TEXT("Clicked at local position: %s"), *LocalLocation.ToString());
+}
+

@@ -17,14 +17,14 @@ class C_PAINTIR_API AMyStaticMeshActor : public AStaticMeshActor
 	
 public:
 	AMyStaticMeshActor();
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UCanvasComponent* CanvasComponent;
 
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UCanvasComponent* CanvasComponent;
 
 private:
 	UFUNCTION()
