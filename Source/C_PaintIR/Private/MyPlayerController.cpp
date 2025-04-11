@@ -33,7 +33,7 @@ void AMyPlayerController::HandleLeftClick()
 			if (MyStaticMeshActor && MyStaticMeshActor->CanvasComponent)
 			{
 				// 调用 CanvasComponent 的功能，例如绘制内容
-				MyStaticMeshActor->CanvasComponent->DrawPoint(WorldHitLocation);
+				MyStaticMeshActor->CanvasComponent->SetMeshMaterial(MyStaticMeshActor->GetStaticMeshComponent());
 				// 或其他 CanvasComponent 的方法
 			}
 		}

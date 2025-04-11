@@ -61,3 +61,5 @@ IMPLEMENT_GLOBAL_SHADER(FWhiteNoiseCS, "/CustomShaders/WhiteNoiseCS.usf", "MainC
 //Static members
 FWhiteNoiseCSManager* FWhiteNoiseCSManager::instance = nullptr;
 
+
+
