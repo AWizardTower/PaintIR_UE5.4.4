@@ -8,7 +8,7 @@ public class C_PaintIR : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "RenderCore", "RHI", "ProceduralMeshComponent", "ImageWrapper"});
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "RenderCore", "RHI", "ProceduralMeshComponent", "ImageWrapper","UMG"});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

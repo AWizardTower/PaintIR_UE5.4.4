@@ -19,7 +19,10 @@ UCanvasComponent::UCanvasComponent()
 
 	// 加载材质资产
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MaterialAsset(TEXT("Material'/Game/Materials/M_MyMaterial.M_MyMaterial'"));
-	DynamicMaterial = UMaterialInstanceDynamic::Create(MaterialAsset.Object, this);
+	if (MaterialAsset.Succeeded())
+	{
+		DynamicMaterial = UMaterialInstanceDynamic::Create(MaterialAsset.Object, this);
+	}
 }
 
 
@@ -41,12 +44,12 @@ void UCanvasComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	// ...
 }
 
-void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float)
+void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value)
 {
 	// 将世界坐标转换为组件的局部坐标
 	FVector LocalLocation = GetComponentTransform().InverseTransformPosition(WorldLocation);
 	// 输出局部坐标
-	UE_LOG(LogTemp, Log, TEXT("Clicked at local position: %s"), *LocalLocation.ToString());
+	UE_LOG(LogTemp, Log, TEXT("Clicked at local position: %s, and current value is :%f"), *LocalLocation.ToString(),Value);
 }
 
 void UCanvasComponent::SetDrawMode(ECanvasDrawMode NewMode)

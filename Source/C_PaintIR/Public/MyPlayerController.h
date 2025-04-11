@@ -17,10 +17,23 @@ class C_PAINTIR_API AMyPlayerController : public APlayerController
 public:
 	AMyPlayerController();
 
+	// 当前绘制属性值
+	float CurrentValue;
+
+	// 设置绘制属性值
+	// 这么说还必须设置为蓝图可调用的
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void SetCurrentValue(float NewValue);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UUserWidget> UMGMainWidgetClass;
+
 private:
 	void HandleLeftClick();
 
 protected:
 	virtual void SetupInputComponent() override;
+
+	virtual void BeginPlay() override;
 
 };

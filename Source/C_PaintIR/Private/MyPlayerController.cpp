@@ -2,6 +2,7 @@
 
 #include "MyPlayerController.h"
 #include "MyStaticMeshActor.h"
+#include "Blueprint/UserWidget.h"
 
 AMyPlayerController::AMyPlayerController()
 {
@@ -9,6 +10,26 @@ AMyPlayerController::AMyPlayerController()
 	bShowMouseCursor = true;          // 显示鼠标光标
 	DefaultClickTraceChannel = ECC_Visibility; // 设置点击检测通道
 	DefaultMouseCursor = EMouseCursor::Crosshairs;
+
+	static ConstructorHelpers::FClassFinder<UUserWidget> WidgetClassFinder(TEXT("/Game/UI/UMG_Main"));
+	if (WidgetClassFinder.Succeeded())
+	{
+		UMGMainWidgetClass = WidgetClassFinder.Class;
+	}
+}
+
+void AMyPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (UMGMainWidgetClass)
+	{
+		UUserWidget* UMGMainWidget = CreateWidget<UUserWidget>(this, UMGMainWidgetClass);
+		if (UMGMainWidget)
+		{
+			UMGMainWidget->AddToViewport();
+		}
+	}
 }
 
 void AMyPlayerController::SetupInputComponent()
@@ -33,10 +54,15 @@ void AMyPlayerController::HandleLeftClick()
 			if (MyStaticMeshActor && MyStaticMeshActor->CanvasComponent)
 			{
 				// 调用 CanvasComponent 的功能，例如绘制内容
-				MyStaticMeshActor->CanvasComponent->SetMeshMaterial(MyStaticMeshActor->GetStaticMeshComponent());
+				MyStaticMeshActor->CanvasComponent->DrawPoint(WorldHitLocation,CurrentValue);
 				// 或其他 CanvasComponent 的方法
 			}
 		}
 	}
 }
 
+void AMyPlayerController::SetCurrentValue(float NewValue)
+{
+	CurrentValue = NewValue;
+	// 可以在此处添加其他逻辑，例如更新 UI 显示等
+}
