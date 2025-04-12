@@ -35,13 +35,17 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void DrawPoint(const FVector& WorldLocation, float Value);
+	void DrawPoint(const FVector& WorldLocation, float Value, UStaticMeshComponent* MeshComponent);
 
 	// 设置当前绘制模式
 	void SetDrawMode(ECanvasDrawMode NewMode);
 
 	// 设置网格材质的纹理
 	void SetMeshMaterial(UStaticMeshComponent* MeshComponent);
+
+	void UploadVertexBufferToGPU(const TArray<FVector3f>& VertexPositions, const TArray<FVector2f>& VertexUVs, const FBoxSphereBounds& Bounds);
+
+	void SaveTextureToDisk(FTexture2DRHIRef OutputTexture, const FString& FilePath);
 
 private:
 	ECanvasDrawMode CurrentDrawMode;

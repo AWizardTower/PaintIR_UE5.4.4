@@ -44,6 +44,7 @@ UTexture2D* FTextureUtils::GenerateTexture()
 	return NewTexture;
 }
 
+// eg "/Game/Textures/Test.png"
 bool FTextureUtils::SaveTextureToDisk(UTexture2D* Texture, const FString& FilePath)
 {
 	if (!Texture)
@@ -76,3 +77,4 @@ bool FTextureUtils::SaveTextureToDisk(UTexture2D* Texture, const FString& FilePa
 	FImageUtils::CompressImageArray(Width, Height, Bitmap, PNGData);
 	return FFileHelper::SaveArrayToFile(PNGData, *FilePath);
 }
+

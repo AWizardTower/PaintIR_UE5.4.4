@@ -8,4 +8,6 @@ public:
 
 	// 保存纹理到磁盘
 	static bool SaveTextureToDisk(UTexture2D* Texture, const FString& FilePath);
+
+	void SaveShaderOutputTexture(FTexture2DRHIRef OutputTexture);
 };

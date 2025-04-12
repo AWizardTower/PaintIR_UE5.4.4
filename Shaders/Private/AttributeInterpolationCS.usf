@@ -1,0 +1,44 @@
+﻿// 缺少Platform.ush将导致crash。
+#include "/Engine/Public/Platform.ush"
+
+	uint VertexCount;  // 缓冲区的长度
+
+
+// 包围盒最小值与最大值
+
+	float3 MinBound;
+	float3 MaxBound;
+
+
+// 包围盒最小值与最大值
+
+
+	uint TextureWidth;  // 纹理的实际宽度
+	uint TextureHeight; // 纹理的实际高度
+
+
+StructuredBuffer<float3> VertexPositions : register(t0);
+StructuredBuffer<float2> VertexUVs : register(t1);
+RWTexture2D<float4> OutputTexture : register(u0);
+
+[numthreads(8, 8, 1)]
+void MainCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+	uint index = DispatchThreadID.x + DispatchThreadID.y * TextureWidth; 
+
+	if (index < VertexCount)
+	{
+		float3 position = VertexPositions[index];
+		float2 uv = VertexUVs[index];
+		// 映射坐标为 [0, 1] 区间
+		float3 normalizedPos = (position - MinBound) / (MaxBound - MinBound);
+		normalizedPos = saturate(normalizedPos); // 保守保险做一手截断
+		// 使用归一化的位置作为颜色
+		float4 color = float4(normalizedPos, 1.0);
+
+		// 将颜色写入纹理的对应UV位置
+		uint2 texelCoord = uint2(clamp(uv * float2(TextureWidth, TextureHeight), float2(0.0f, 0.0f), float2(TextureWidth - 1, TextureHeight - 1)));
+
+		OutputTexture[texelCoord] = color;
+	}
+}

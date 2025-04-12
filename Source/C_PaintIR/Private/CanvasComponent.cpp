@@ -2,9 +2,16 @@
 
 
 #include "CanvasComponent.h"
+
+#include "ImageUtils.h"
 #include "Engine/Texture2D.h"
 #include "TextureUtils.h"
 #include "Engine/Texture.h"
+#include "CustomShadersDeclarations/Private/APCSDeclaration.h"
+
+#include "RHICommandList.h"
+#include "Misc/FileHelper.h"
+#include "HAL/PlatformFilemanager.h"
 
 // Sets default values for this component's properties
 UCanvasComponent::UCanvasComponent()
@@ -44,13 +51,122 @@ void UCanvasComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	// ...
 }
 
-void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value)
+void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value, UStaticMeshComponent* MeshComponent)
 {
 	// 将世界坐标转换为组件的局部坐标
 	FVector LocalLocation = GetComponentTransform().InverseTransformPosition(WorldLocation);
-	// 输出局部坐标
-	UE_LOG(LogTemp, Log, TEXT("Clicked at local position: %s, and current value is :%f"), *LocalLocation.ToString(),Value);
+	UE_LOG(LogTemp, Log, TEXT("Clicked at local position: %s, and current value is :%f"), *LocalLocation.ToString(), Value);
+
+	DrawnPoints.Add(LocalLocation, Value);
+
+	UStaticMesh* StaticMesh = MeshComponent->GetStaticMesh();
+	if (!StaticMesh) return;
+	
+	// 获取网格体的包围盒
+	const FBoxSphereBounds MeshBounds = StaticMesh->GetBounds();
+	
+	FStaticMeshRenderData* RenderData = StaticMesh->GetRenderData();
+	if (!RenderData || RenderData->LODResources.Num() == 0) return;
+
+	const FStaticMeshLODResources& LODResource = RenderData->LODResources[0];
+	const FPositionVertexBuffer& PositionBuffer = LODResource.VertexBuffers.PositionVertexBuffer;
+	const FStaticMeshVertexBuffer& VertexBuffer = LODResource.VertexBuffers.StaticMeshVertexBuffer;
+
+	// 顶点数量是一致的
+	int32 VertexCount = PositionBuffer.GetNumVertices();
+	
+	// 准备顶点位置和 UV 数据
+	TArray<FVector3f> VertexPositions;
+	TArray<FVector2f> VertexUVs;
+	VertexPositions.SetNum(VertexCount);
+	VertexUVs.SetNum(VertexCount);
+	
+	for (int32 i = 0; i < VertexCount; ++i)
+	{
+		VertexPositions[i] = PositionBuffer.VertexPosition(i);
+		VertexUVs[i] = VertexBuffer.GetVertexUV(i, 0); // 使用第一个 UV 通道
+	}
+
+	UploadVertexBufferToGPU(VertexPositions, VertexUVs, MeshBounds);
 }
+
+void UCanvasComponent::UploadVertexBufferToGPU(const TArray<FVector3f>& VertexPositions, const TArray<FVector2f>& VertexUVs, const FBoxSphereBounds& MeshBounds)
+{
+	const uint32 PositionBufferSize = VertexPositions.Num() * sizeof(FVector3f);
+	const uint32 UVBufferSize = VertexUVs.Num() * sizeof(FVector2f);
+
+	// 使用共享指针防止数据生命周期问题
+	TSharedPtr<TArray<FVector3f>> VertexPositionsCopy = MakeShared<TArray<FVector3f>>(VertexPositions);
+	TSharedPtr<TArray<FVector2f>> VertexUVsCopy = MakeShared<TArray<FVector2f>>(VertexUVs);
+
+    ENQUEUE_RENDER_COMMAND(UploadVertexAndUVBuffers)(
+        [MeshBounds, VertexPositionsCopy, VertexUVsCopy, PositionBufferSize, UVBufferSize](FRHICommandListImmediate& RHICmdList)
+        {
+            // 创建顶点位置结构化缓冲区
+            FRHIResourceCreateInfo PositionCreateInfo(TEXT("VertexPositionBuffer"));
+            FBufferRHIRef PositionBuffer = RHICmdList.CreateStructuredBuffer(
+                sizeof(FVector3f),
+                PositionBufferSize,
+                BUF_ShaderResource,
+                PositionCreateInfo
+            );
+
+            void* PositionBufferData = RHICmdList.LockBuffer(PositionBuffer, 0, PositionBufferSize, RLM_WriteOnly);
+            FMemory::Memcpy(PositionBufferData, VertexPositionsCopy->GetData(), PositionBufferSize);
+            RHICmdList.UnlockBuffer(PositionBuffer);
+            FShaderResourceViewRHIRef PositionBufferSRV = RHICmdList.CreateShaderResourceView(PositionBuffer);
+
+            // 创建 UV 结构化缓冲区
+            FRHIResourceCreateInfo UVCreateInfo(TEXT("VertexUVBuffer"));
+            FBufferRHIRef UVBuffer = RHICmdList.CreateStructuredBuffer(
+                sizeof(FVector2f),
+                UVBufferSize,
+                BUF_ShaderResource,
+                UVCreateInfo
+            );
+
+            void* UVBufferData = RHICmdList.LockBuffer(UVBuffer, 0, UVBufferSize, RLM_WriteOnly);
+            FMemory::Memcpy(UVBufferData, VertexUVsCopy->GetData(), UVBufferSize);
+            RHICmdList.UnlockBuffer(UVBuffer);
+            FShaderResourceViewRHIRef UVBufferSRV = RHICmdList.CreateShaderResourceView(UVBuffer);
+
+            // 创建输出纹理
+            int32 Width = 1024;
+            int32 Height = 1024;
+            FRHITextureCreateDesc Desc = FRHITextureCreateDesc::Create2D(TEXT("MyRWTexture"))
+                .SetExtent(Width, Height)
+                .SetFormat(PF_R8G8B8A8)
+                .SetFlags(TexCreate_ShaderResource | TexCreate_UAV | TexCreate_RenderTargetable)
+                .SetNumMips(1);
+
+            FTexture2DRHIRef OutputTexture = RHICreateTexture(Desc)->GetTexture2D();
+            FUnorderedAccessViewRHIRef OutputTextureUAV = RHICmdList.CreateUnorderedAccessView(OutputTexture);
+
+        	// 创建计算着色器的参数
+			FAPCSParameters ShaderParameters;
+			ShaderParameters.VertexPositions = PositionBufferSRV;
+			ShaderParameters.VertexUVs = UVBufferSRV;
+			ShaderParameters.OutputTexture = OutputTextureUAV;
+			ShaderParameters.VertexCount = VertexPositionsCopy->Num();
+			ShaderParameters.MinBound = FVector3f(0.0f, 0.0f, 0.0f);  // 这里使用适当的包围盒值
+			ShaderParameters.MaxBound = FVector3f(1.0f, 1.0f, 1.0f);  // 这里使用适当的包围盒值
+        	
+        	// 使用获取的包围盒的最小值和最大值
+        	// 手动计算包围盒的 Min 和 Max
+			FVector3f MinBound = FVector3f(MeshBounds.Origin - MeshBounds.BoxExtent);
+			FVector3f MaxBound = FVector3f(MeshBounds.Origin + MeshBounds.BoxExtent);
+
+			ShaderParameters.MinBound = MinBound;
+			ShaderParameters.MaxBound = MaxBound;
+        	
+			ShaderParameters.TextureWidth = Width;
+			ShaderParameters.TextureHeight = Height;
+        	
+			FAPCSManager::Dispatch(RHICmdList, ShaderParameters);
+        }
+    );
+}
+
 
 void UCanvasComponent::SetDrawMode(ECanvasDrawMode NewMode)
 {
@@ -84,3 +200,43 @@ void UCanvasComponent::SetMeshMaterial(UStaticMeshComponent* MeshComponent)
 		}
 	}
 }
+
+void UCanvasComponent::SaveTextureToDisk(FTexture2DRHIRef OutputTexture, const FString& FilePath)
+{
+	// 获取纹理的宽高
+	int32 Width = OutputTexture->GetSizeX();
+	int32 Height = OutputTexture->GetSizeY();
+
+	// 创建一个缓冲区来存储读取的图像数据
+	TArray<FColor> OutImageData;
+	OutImageData.SetNumUninitialized(Width * Height);  // 根据纹理的尺寸调整大小
+
+	// 读取纹理内容到内存
+	ENQUEUE_RENDER_COMMAND(ReadTextureData)(
+		[OutputTexture, &OutImageData, Width, Height](FRHICommandListImmediate& RHICmdList)
+		{
+			// 使用RHI读取纹理数据到缓冲区
+			RHICmdList.ReadSurfaceData(OutputTexture, FIntRect(0, 0, Width, Height), OutImageData, FReadSurfaceDataFlags());
+		}
+	);
+
+	// 等待GPU命令执行完毕，确保图像数据已经读取
+	FlushRenderingCommands();
+
+	// 创建一个TArray<uint8>存储PNG格式的图像数据
+	TArray<uint8> CompressedData;
+
+	// 使用FImageUtils将图像数据压缩为PNG
+	FImageUtils::CompressImageArray(Width, Height, OutImageData, CompressedData);
+	
+		// 保存压缩的图像数据到文件
+		if (FFileHelper::SaveArrayToFile(CompressedData, *FilePath))
+		{
+			UE_LOG(LogTemp, Log, TEXT("Texture saved to %s"), *FilePath);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to save texture to %s"), *FilePath);
+		}
+}
+
