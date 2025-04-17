@@ -3,6 +3,7 @@
 #include "MyPlayerController.h"
 #include "MyStaticMeshActor.h"
 #include "Blueprint/UserWidget.h"
+#include "Camera/CameraActor.h"
 
 AMyPlayerController::AMyPlayerController()
 {
@@ -65,4 +66,16 @@ void AMyPlayerController::SetCurrentValue(float NewValue)
 {
 	CurrentValue = NewValue;
 	// 可以在此处添加其他逻辑，例如更新 UI 显示等
+}
+
+void AMyPlayerController::MoveCharacter(const FVector& TargetLocation, const FRotator& TargetRotation)
+{
+	APawn* ControlledPawn = GetPawn();
+	if (ControlledPawn)
+	{
+		ControlledPawn->SetActorLocation(TargetLocation);
+
+		// 设置控制器的旋转，这样角色也会朝向你设定的方向
+		SetControlRotation(TargetRotation);
+	}
 }

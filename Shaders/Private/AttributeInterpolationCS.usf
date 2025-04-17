@@ -34,7 +34,8 @@ void MainCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 		float3 normalizedPos = (position - MinBound) / (MaxBound - MinBound);
 		normalizedPos = saturate(normalizedPos); // 保守保险做一手截断
 		// 使用归一化的位置作为颜色
-		float4 color = float4(normalizedPos, 1.0);
+		// float4 color = float4(normalizedPos, 1.0);
+		float4 color = float4(0.0, 0.0, 1.0, 1.0);
 
 		// 将颜色写入纹理的对应UV位置
 		uint2 texelCoord = uint2(clamp(uv * float2(TextureWidth, TextureHeight), float2(0.0f, 0.0f), float2(TextureWidth - 1, TextureHeight - 1)));

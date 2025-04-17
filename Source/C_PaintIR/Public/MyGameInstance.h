@@ -19,11 +19,11 @@ public:
 	UMyGameInstance();
 	
 	virtual void Init() override;
-	
+
+	UFUNCTION(BlueprintCallable, Category = "MeshManager")
 	UMeshManager* GetMeshManager() const { return MeshManager; }
-	
+
 private:
 	UPROPERTY()
 	UMeshManager* MeshManager;
-	
 };

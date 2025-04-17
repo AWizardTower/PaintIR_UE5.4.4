@@ -38,3 +38,60 @@ void AMyStaticMeshActor::OnActorClicked(AActor* TouchedActor, FKey ButtonPressed
 	// 	}
 	// }
 }
+
+FCameraViewInfo AMyStaticMeshActor::GetViewPosition(EViewDirection Direction) const
+{
+	if (!GetStaticMeshComponent() || !GetStaticMeshComponent()->GetStaticMesh())
+	{
+		return FCameraViewInfo();
+	}
+
+	FBoxSphereBounds Bounds = GetStaticMeshComponent()->Bounds;
+	FVector Center = Bounds.Origin;
+	FVector Extent = Bounds.BoxExtent;
+	float Distance = Extent.Size() * 1.5f;
+
+	FVector ViewDirection;
+
+	switch (Direction)
+	{
+	case EViewDirection::Front:
+		ViewDirection = FVector(1, 0, 0);
+		break;
+	case EViewDirection::Back:
+		ViewDirection = FVector(-1, 0, 0);
+		break;
+	case EViewDirection::Right:
+		ViewDirection = FVector(0, 1, 0);
+		break;
+	case EViewDirection::Left:
+		ViewDirection = FVector(0, -1, 0);
+		break;
+	case EViewDirection::Top:
+		ViewDirection = FVector(0, 0, 1);
+		break;
+	case EViewDirection::Bottom:
+		ViewDirection = FVector(0, 0, -1);
+		break;
+	default:
+		ViewDirection = FVector(1, 0, 0);
+		break;
+	}
+
+	FVector ViewLocation = Center + ViewDirection * Distance;
+	FRotator ViewRotation = (Center - ViewLocation).Rotation();
+
+	return FCameraViewInfo(ViewLocation, ViewRotation);
+}
+
+FString AMyStaticMeshActor::GetMeshName() const
+{
+	if (UStaticMeshComponent* MeshComp = GetStaticMeshComponent())
+	{
+		if (UStaticMesh* Mesh = MeshComp->GetStaticMesh())
+		{
+			return Mesh->GetName();
+		}
+	}
+	return TEXT("None");
+}

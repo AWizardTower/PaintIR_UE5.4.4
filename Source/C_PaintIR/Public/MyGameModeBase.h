@@ -19,4 +19,12 @@ public:
 	
 	virtual void BeginPlay() override;
 	
+	UFUNCTION()
+	void OnMeshLoadFinished()
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Hello from C++!"));
+		}
+	}
 };

@@ -59,5 +59,7 @@ private:
 
 	UPROPERTY()
 	UMaterialInstanceDynamic* DynamicMaterial;
+
+	void SaveTextureToDiskOnGameThread(FTexture2DRHIRef OutputTexture, const FString& FilePath);
 	
 };

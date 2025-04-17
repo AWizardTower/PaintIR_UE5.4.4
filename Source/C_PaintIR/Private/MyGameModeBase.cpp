@@ -23,8 +23,11 @@ void AMyGameModeBase::BeginPlay()
 		UMeshManager* MeshManager = GameInstance->GetMeshManager();
 		if (MeshManager)
 		{
-			// 调用 MeshManager 的方法，例如加载网格
 			MeshManager->LoadMeshes(TEXT("/Game/650FlightScene/作战实体模型/车辆"));
+
+			//并不专门存储一个MyPlayerController的引用
+			AMyPlayerController* MyPC = Cast<AMyPlayerController>(GetWorld()->GetFirstPlayerController());
+			
 		}
 		else
 		{

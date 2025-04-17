@@ -71,7 +71,76 @@ void UMeshManager::LoadMeshes(const FString& AssetPath)
 			}
 		}
 	}
-	
 }
 
+int32 UMeshManager::GetMeshCount() const
+{
+	return StaticMeshes.Num();
+}
 
+AMyStaticMeshActor* UMeshManager::GetCurrentActor() const
+{
+	if (Actors.IsValidIndex(CurrentActorIndex))
+	{
+		return Cast<AMyStaticMeshActor>(Actors[CurrentActorIndex]);
+	}
+	return nullptr;
+}
+
+AMyStaticMeshActor* UMeshManager::NextActor()
+{
+	if (Actors.Num() == 0) return nullptr;
+
+	CurrentActorIndex = (CurrentActorIndex + 1) % Actors.Num();
+	return Cast<AMyStaticMeshActor>(Actors[CurrentActorIndex]);
+}
+
+AMyStaticMeshActor* UMeshManager::PreviousActor()
+{
+	if (Actors.Num() == 0) return nullptr;
+
+	CurrentActorIndex = (CurrentActorIndex - 1 + Actors.Num()) % Actors.Num();
+	return Cast<AMyStaticMeshActor>(Actors[CurrentActorIndex]);
+}
+
+AMyStaticMeshActor* UMeshManager::FindActorByName(const FString& Name) const
+{
+	for (AActor* Actor : Actors)
+	{
+		if (Actor && Actor->GetActorLabel() == Name)
+		{
+			return Cast<AMyStaticMeshActor>(Actor);
+		}
+	}
+	return nullptr;
+}
+
+AMyStaticMeshActor* UMeshManager::FindActorByIndex(int32 Index) 
+{
+	if (Actors.IsValidIndex(Index))
+	{
+		//同样改变了当前actor
+		CurrentActorIndex = Index;
+		return Actors[Index];
+	}
+	return nullptr;
+}
+
+int32 UMeshManager::GetCurrentMeshIndex() const
+{
+	return CurrentActorIndex + 1;
+}
+
+TArray<FString> UMeshManager::GetActorIndexNameList() const
+{
+	TArray<FString> DisplayList;
+	for (int32 i = 0; i < Actors.Num(); ++i)
+	{
+		if (Actors[i])
+		{
+			FString Entry = FString::Printf(TEXT("%d. %s"), i+1, *Actors[i]->GetMeshName() );
+			DisplayList.Add(Entry);
+		}
+	}
+	return DisplayList;
+}

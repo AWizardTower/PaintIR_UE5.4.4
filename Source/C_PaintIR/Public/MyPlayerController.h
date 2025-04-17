@@ -28,6 +28,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UUserWidget> UMGMainWidgetClass;
 
+	// 移动角色到指定位置并旋转
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void MoveCharacter(const FVector& TargetLocation, const FRotator& TargetRotation);
+
 private:
 	void HandleLeftClick();
 

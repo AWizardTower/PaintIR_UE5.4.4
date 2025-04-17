@@ -100,7 +100,7 @@ void UCanvasComponent::UploadVertexBufferToGPU(const TArray<FVector3f>& VertexPo
 	TSharedPtr<TArray<FVector2f>> VertexUVsCopy = MakeShared<TArray<FVector2f>>(VertexUVs);
 
     ENQUEUE_RENDER_COMMAND(UploadVertexAndUVBuffers)(
-        [MeshBounds, VertexPositionsCopy, VertexUVsCopy, PositionBufferSize, UVBufferSize](FRHICommandListImmediate& RHICmdList)
+        [this, MeshBounds, VertexPositionsCopy, VertexUVsCopy, PositionBufferSize, UVBufferSize](FRHICommandListImmediate& RHICmdList)
         {
             // 创建顶点位置结构化缓冲区
             FRHIResourceCreateInfo PositionCreateInfo(TEXT("VertexPositionBuffer"));
@@ -163,6 +163,10 @@ void UCanvasComponent::UploadVertexBufferToGPU(const TArray<FVector3f>& VertexPo
 			ShaderParameters.TextureHeight = Height;
         	
 			FAPCSManager::Dispatch(RHICmdList, ShaderParameters);
+
+        	FString FilePath = FPaths::ProjectContentDir() + TEXT("Textures/OutputTexture.png");
+
+        	SaveTextureToDisk(OutputTexture, FilePath);
         }
     );
 }
@@ -203,6 +207,22 @@ void UCanvasComponent::SetMeshMaterial(UStaticMeshComponent* MeshComponent)
 
 void UCanvasComponent::SaveTextureToDisk(FTexture2DRHIRef OutputTexture, const FString& FilePath)
 {
+	// 在渲染线程中进行操作时，使用 ENQUEUE_RENDER_COMMAND
+	ENQUEUE_RENDER_COMMAND(SaveTextureCommand)(
+		[this, OutputTexture, FilePath](FRHICommandListImmediate& RHICmdList)
+		{
+			// 使用 Enqueue 来确保操作在正确的线程中执行
+			AsyncTask(ENamedThreads::GameThread, [this, OutputTexture, FilePath]()
+			{
+				// 确保 SaveTextureToDisk 在游戏线程中执行
+				SaveTextureToDiskOnGameThread(OutputTexture, FilePath);
+			});
+		}
+	);
+}
+
+void UCanvasComponent::SaveTextureToDiskOnGameThread(FTexture2DRHIRef OutputTexture, const FString& FilePath)
+{
 	// 获取纹理的宽高
 	int32 Width = OutputTexture->GetSizeX();
 	int32 Height = OutputTexture->GetSizeY();
@@ -229,14 +249,13 @@ void UCanvasComponent::SaveTextureToDisk(FTexture2DRHIRef OutputTexture, const F
 	// 使用FImageUtils将图像数据压缩为PNG
 	FImageUtils::CompressImageArray(Width, Height, OutImageData, CompressedData);
 	
-		// 保存压缩的图像数据到文件
-		if (FFileHelper::SaveArrayToFile(CompressedData, *FilePath))
-		{
-			UE_LOG(LogTemp, Log, TEXT("Texture saved to %s"), *FilePath);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to save texture to %s"), *FilePath);
-		}
+	// 保存压缩的图像数据到文件
+	if (FFileHelper::SaveArrayToFile(CompressedData, *FilePath))
+	{
+		UE_LOG(LogTemp, Log, TEXT("Texture saved to %s"), *FilePath);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to save texture to %s"), *FilePath);
+	}
 }
-
