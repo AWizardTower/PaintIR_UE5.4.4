@@ -21,14 +21,44 @@ UCanvasComponent::UCanvasComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 	CurrentDrawMode = ECanvasDrawMode::Temperature; // 默认绘制模式
 
+	// 创建 SceneCaptureComponent2D
+	SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture"));
+	if (SceneCapture)
+	{
+		SceneCapture->SetupAttachment(this);
+		// Unreal 引擎会 自动在组件构造、Actor创建并附加到世界时帮你注册这些子组件，你不需要手动注册，也不应该这么做，尤其是在构造函数里。
+		// SceneCapture->RegisterComponent();
+
+		// 配置 SceneCapture
+		SceneCapture->FOVAngle = 90.0f;
+		SceneCapture->ProjectionType = ECameraProjectionMode::Type::Orthographic;
+		SceneCapture->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
+		SceneCapture->bCaptureEveryFrame = false;
+		SceneCapture->bCaptureOnMovement = false;
+		
+		FVector Location(0.0f, 0.0f, 200.0f);
+		FRotator Rotation(0.0f, -90.0f, -90.0f);  // 朝下看
+		FVector Scale(1.0f, 1.0f, 1.0f);
+
+		SceneCapture->SetRelativeTransform(FTransform(Rotation, Location, Scale));
+		
+	}
+
 	TemperatureDrawingComp = CreateDefaultSubobject<UTemperatureDrawingComponent>(TEXT("TemperatureDrawingComp"));
 	CustomDrawingComp = CreateDefaultSubobject<UCustomDrawingComponent>(TEXT("CustomDrawingComp"));
 
 	// 加载材质资产
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> MaterialAsset(TEXT("Material'/Game/Materials/M_MyMaterial.M_MyMaterial'"));
-	if (MaterialAsset.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> UnwarpMaterialAsset(TEXT("Material'/Game/Materials/M_Unwarp.M_Unwarp'"));
+	if (UnwarpMaterialAsset.Succeeded())
 	{
-		DynamicMaterial = UMaterialInstanceDynamic::Create(MaterialAsset.Object, this);
+		UnwrapMaterial = UMaterialInstanceDynamic::Create(UnwarpMaterialAsset.Object, this);
+	}
+
+	// 加载材质资产
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> IRMaterialAsset(TEXT("Material'/Game/Materials/M_IR.M_IR'"));
+	if (IRMaterialAsset.Succeeded())
+	{
+		IRMaterial = UMaterialInstanceDynamic::Create(IRMaterialAsset.Object, this);
 	}
 }
 
@@ -37,9 +67,6 @@ UCanvasComponent::UCanvasComponent()
 void UCanvasComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
-	
 }
 
 
@@ -49,6 +76,26 @@ void UCanvasComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
+}
+
+void UCanvasComponent::InitializeForMesh(UStaticMeshComponent* MeshComponent)
+{
+	if (!MeshComponent) return;
+
+	RenderTarget = NewObject<UTextureRenderTarget2D>(this);
+	RenderTarget->InitAutoFormat(Settings.TextureLength, Settings.TextureLength);
+	RenderTarget->ClearColor = FLinearColor::Black;
+	RenderTarget->UpdateResourceImmediate();
+	
+	SceneCapture->TextureTarget = RenderTarget;
+	SceneCapture->OrthoWidth = Settings.OrthoWidth; 
+
+	const FBoxSphereBounds MyBounds = MeshComponent->Bounds;
+	const FVector Center = MyBounds.Origin;
+
+	//把包围盒中心位置作为展开位置
+	UnwrapMaterial->SetScalarParameterValue(FName("UnwrapScale"), Settings.UnwrapScale);
+	UnwrapMaterial->SetVectorParameterValue(FName("UnwrapLocation"), Center);
 }
 
 void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value, UStaticMeshComponent* MeshComponent)
@@ -61,33 +108,39 @@ void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value, USta
 
 	UStaticMesh* StaticMesh = MeshComponent->GetStaticMesh();
 	if (!StaticMesh) return;
-	
-	// 获取网格体的包围盒
-	const FBoxSphereBounds MeshBounds = StaticMesh->GetBounds();
-	
-	FStaticMeshRenderData* RenderData = StaticMesh->GetRenderData();
-	if (!RenderData || RenderData->LODResources.Num() == 0) return;
 
-	const FStaticMeshLODResources& LODResource = RenderData->LODResources[0];
-	const FPositionVertexBuffer& PositionBuffer = LODResource.VertexBuffers.PositionVertexBuffer;
-	const FStaticMeshVertexBuffer& VertexBuffer = LODResource.VertexBuffers.StaticMeshVertexBuffer;
+	//1. 展UV
+	ApplyUnwrapMaterial(MeshComponent);
 
-	// 顶点数量是一致的
-	int32 VertexCount = PositionBuffer.GetNumVertices();
+	//2. 捕获
+	SceneCapture->CaptureScene();
 	
-	// 准备顶点位置和 UV 数据
-	TArray<FVector3f> VertexPositions;
-	TArray<FVector2f> VertexUVs;
-	VertexPositions.SetNum(VertexCount);
-	VertexUVs.SetNum(VertexCount);
-	
-	for (int32 i = 0; i < VertexCount; ++i)
-	{
-		VertexPositions[i] = PositionBuffer.VertexPosition(i);
-		VertexUVs[i] = VertexBuffer.GetVertexUV(i, 0); // 使用第一个 UV 通道
-	}
-
-	UploadVertexBufferToGPU(VertexPositions, VertexUVs, MeshBounds);
+	// // 获取网格体的包围盒
+	// const FBoxSphereBounds MeshBounds = StaticMesh->GetBounds();
+	//
+	// FStaticMeshRenderData* RenderData = StaticMesh->GetRenderData();
+	// if (!RenderData || RenderData->LODResources.Num() == 0) return;
+	//
+	// const FStaticMeshLODResources& LODResource = RenderData->LODResources[0];
+	// const FPositionVertexBuffer& PositionBuffer = LODResource.VertexBuffers.PositionVertexBuffer;
+	// const FStaticMeshVertexBuffer& VertexBuffer = LODResource.VertexBuffers.StaticMeshVertexBuffer;
+	//
+	// // 顶点数量是一致的
+	// int32 VertexCount = PositionBuffer.GetNumVertices();
+	//
+	// // 准备顶点位置和 UV 数据
+	// TArray<FVector3f> VertexPositions;
+	// TArray<FVector2f> VertexUVs;
+	// VertexPositions.SetNum(VertexCount);
+	// VertexUVs.SetNum(VertexCount);
+	//
+	// for (int32 i = 0; i < VertexCount; ++i)
+	// {
+	// 	VertexPositions[i] = PositionBuffer.VertexPosition(i);
+	// 	VertexUVs[i] = VertexBuffer.GetVertexUV(i, 0); // 使用第一个 UV 通道
+	// }
+	//
+	// UploadVertexBufferToGPU(VertexPositions, VertexUVs, MeshBounds);
 }
 
 void UCanvasComponent::UploadVertexBufferToGPU(const TArray<FVector3f>& VertexPositions, const TArray<FVector2f>& VertexUVs, const FBoxSphereBounds& MeshBounds)
@@ -177,7 +230,19 @@ void UCanvasComponent::SetDrawMode(ECanvasDrawMode NewMode)
 	CurrentDrawMode = NewMode;
 }
 
-// 设置网格体材质的纹理
+void UCanvasComponent::ApplyUnwrapMaterial(UStaticMeshComponent* MeshComponent)
+{
+	if (MeshComponent && UnwrapMaterial)
+	{
+		int32 MaterialCount = MeshComponent->GetNumMaterials();
+		for (int32 Index = 0; Index < MaterialCount; ++Index)
+		{
+			MeshComponent->SetMaterial(Index, UnwrapMaterial);
+		}
+	}
+}
+
+// 待修改，用于将生成的纹理结果换给模型
 void UCanvasComponent::SetMeshMaterial(UStaticMeshComponent* MeshComponent)
 {
 	if (MeshComponent)
@@ -187,10 +252,10 @@ void UCanvasComponent::SetMeshMaterial(UStaticMeshComponent* MeshComponent)
 
 		if (GeneratedTexture)
 		{
-			if (DynamicMaterial)
+			if (IRMaterial)
 			{
 				// 设置生成的纹理到材质的参数槽
-				DynamicMaterial->SetTextureParameterValue(TEXT("TextureParam"), GeneratedTexture);
+				IRMaterial->SetTextureParameterValue(TEXT("TextureParam"), GeneratedTexture);
 			
 				// 获取网格体的材质数量
 				int32 SlotCount = MeshComponent->GetNumMaterials();
@@ -198,7 +263,7 @@ void UCanvasComponent::SetMeshMaterial(UStaticMeshComponent* MeshComponent)
 				// 遍历所有材质槽，应用动态材质
 				for (int32 i = 0; i < SlotCount; ++i)
 				{
-					MeshComponent->SetMaterial(i, DynamicMaterial);
+					MeshComponent->SetMaterial(i, IRMaterial);
 				}
 			}
 		}
