@@ -4,11 +4,13 @@
 #include "MyGameModeBase.h"
 #include "MyGameInstance.h" // 引入 GameInstance 头文件
 #include "MyPlayerController.h"
+#include "Painter.h"
 
 
 AMyGameModeBase::AMyGameModeBase()
 {
 	PlayerControllerClass = AMyPlayerController::StaticClass(); // 设置自定义 PlayerController
+	DefaultPawnClass = APainter::StaticClass();
 }
 
 void AMyGameModeBase::BeginPlay()

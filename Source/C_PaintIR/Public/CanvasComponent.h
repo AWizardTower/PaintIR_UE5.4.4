@@ -18,15 +18,15 @@ struct FCanvasComponentSettings
 
 	// RenderTarget 尺寸
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	int32 TextureLength = 1024;
+	int32 TextureLength = 2048;
 
-	// 展开尺寸
+	// 展开尺寸 应该用不着严丝合缝
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	int32 UnwrapScale = 1024;
+	int32 UnwrapScale = 2000;
 
 	// 正交相机捕获范围
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	int32 OrthoWidth = 1024;
+	int32 OrthoWidth = 2048;
 
 	// SceneCapture 相对于模型的偏移位置
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
@@ -83,6 +83,7 @@ public:
 
 	void ApplyUnwrapMaterial(UStaticMeshComponent* MeshComponent);
 
+	void CopyRenderTargetRHI(UTextureRenderTarget2D* SourceRT, UTextureRenderTarget2D* DestRT);
 private:
 	ECanvasDrawMode CurrentDrawMode;
 	TMap<FVector, float> DrawnPoints; // 存储已绘制点的位置和对应的值
@@ -103,11 +104,14 @@ private:
 
 	UPROPERTY()
 	USceneCaptureComponent2D* SceneCapture;
-
-	// CanvasComponent.h
+	
 	UPROPERTY()
 	UTextureRenderTarget2D* RenderTarget = nullptr;
 
 	UPROPERTY()
 	FCanvasComponentSettings Settings;
+
+	// CanvasComponent.h
+	UPROPERTY()
+	UTextureRenderTarget2D* RTDisplayIR = nullptr;
 };

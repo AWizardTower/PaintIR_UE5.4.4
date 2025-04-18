@@ -13,5 +13,7 @@ UCLASS()
 class C_PAINTIR_API APainter : public ADefaultPawn
 {
 	GENERATED_BODY()
-	
+
+	public:
+	APainter();
 };

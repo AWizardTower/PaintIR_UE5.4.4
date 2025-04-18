@@ -29,6 +29,10 @@ UCanvasComponent::UCanvasComponent()
 		// Unreal 引擎会 自动在组件构造、Actor创建并附加到世界时帮你注册这些子组件，你不需要手动注册，也不应该这么做，尤其是在构造函数里。
 		// SceneCapture->RegisterComponent();
 
+		// 可视化 SceneCapture 相机
+		SceneCapture->bVisualizeComponent = true;
+		SceneCapture->ShowFlags.SetCameraFrustums(true);
+		
 		// 配置 SceneCapture
 		SceneCapture->FOVAngle = 90.0f;
 		SceneCapture->ProjectionType = ECameraProjectionMode::Type::Orthographic;
@@ -36,8 +40,9 @@ UCanvasComponent::UCanvasComponent()
 		SceneCapture->bCaptureEveryFrame = false;
 		SceneCapture->bCaptureOnMovement = false;
 		
-		FVector Location(0.0f, 0.0f, 200.0f);
-		FRotator Rotation(0.0f, -90.0f, -90.0f);  // 朝下看
+		FVector Location(0.0f, 0.0f, 1000.0f);
+		//因为是RelativeTransform，居然这才是向下看
+		FRotator Rotation(-90.0f, 0.0f, 0.0f);  
 		FVector Scale(1.0f, 1.0f, 1.0f);
 
 		SceneCapture->SetRelativeTransform(FTransform(Rotation, Location, Scale));
@@ -59,6 +64,13 @@ UCanvasComponent::UCanvasComponent()
 	if (IRMaterialAsset.Succeeded())
 	{
 		IRMaterial = UMaterialInstanceDynamic::Create(IRMaterialAsset.Object, this);
+	}
+	
+	// 构造函数中
+	static ConstructorHelpers::FObjectFinder<UTextureRenderTarget2D> RTAsset(TEXT("TextureRenderTarget2D'/Game/UI/RT_IRTexturePre.RT_IRTexturePre'"));
+	if (RTAsset.Succeeded())
+	{
+		RTDisplayIR = RTAsset.Object;
 	}
 }
 
@@ -87,15 +99,19 @@ void UCanvasComponent::InitializeForMesh(UStaticMeshComponent* MeshComponent)
 	RenderTarget->ClearColor = FLinearColor::Black;
 	RenderTarget->UpdateResourceImmediate();
 	
-	SceneCapture->TextureTarget = RenderTarget;
+	SceneCapture->TextureTarget = RTDisplayIR;
 	SceneCapture->OrthoWidth = Settings.OrthoWidth; 
 
 	const FBoxSphereBounds MyBounds = MeshComponent->Bounds;
 	const FVector Center = MyBounds.Origin;
-
-	//把包围盒中心位置作为展开位置
+	// 获取 CanvasComponent 根组件的世界位置
+	FVector UnwrapLocation = GetComponentLocation()+FVector(0.0f, 0.0f, 1.0f);
+	// UE_LOG(LogTemp, Log, TEXT("展开位置设置为: %s"), *CanvasLocation.ToString());
+	
+	// 把包围盒中心位置作为展开位置不行，和相机捕捉中心对不上
+	// 注意名称要对，没有该名称的参数也不会报错，较难排除错误
 	UnwrapMaterial->SetScalarParameterValue(FName("UnwrapScale"), Settings.UnwrapScale);
-	UnwrapMaterial->SetVectorParameterValue(FName("UnwrapLocation"), Center);
+	UnwrapMaterial->SetVectorParameterValue(FName("UnwrapLocation"), UnwrapLocation);
 }
 
 void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value, UStaticMeshComponent* MeshComponent)
@@ -114,7 +130,8 @@ void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value, USta
 
 	//2. 捕获
 	SceneCapture->CaptureScene();
-	
+	//3.显示结果
+	//CopyRenderTargetRHI(RenderTarget,RTDisplayIR );
 	// // 获取网格体的包围盒
 	// const FBoxSphereBounds MeshBounds = StaticMesh->GetBounds();
 	//
@@ -323,4 +340,28 @@ void UCanvasComponent::SaveTextureToDiskOnGameThread(FTexture2DRHIRef OutputText
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to save texture to %s"), *FilePath);
 	}
+}
+
+void UCanvasComponent::CopyRenderTargetRHI(UTextureRenderTarget2D* SourceRT, UTextureRenderTarget2D* DestRT)
+{
+	ENQUEUE_RENDER_COMMAND(CopyRTToRT)(
+		[SourceRT, DestRT](FRHICommandListImmediate& RHICmdList)
+		{
+			if (!SourceRT || !DestRT) return;
+
+			FTextureRenderTargetResource* SrcResource = SourceRT->GameThread_GetRenderTargetResource();
+			FTextureRenderTargetResource* DstResource = DestRT->GameThread_GetRenderTargetResource();
+
+			if (!SrcResource || !DstResource) return;
+
+			FRHITexture2D* SrcTexture = SrcResource->GetRenderTargetTexture();
+			FRHITexture2D* DstTexture = DstResource->GetRenderTargetTexture();
+
+			if (!SrcTexture || !DstTexture) return;
+
+			FRHICopyTextureInfo CopyInfo;
+			CopyInfo.Size = SrcTexture->GetSizeXYZ();
+			RHICmdList.CopyTexture(SrcTexture, DstTexture, CopyInfo);
+		}
+	);
 }
