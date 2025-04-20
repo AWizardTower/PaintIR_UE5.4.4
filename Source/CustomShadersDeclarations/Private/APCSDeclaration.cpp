@@ -11,16 +11,19 @@ class FAPCS : public FGlobalShader
 	SHADER_USE_PARAMETER_STRUCT(FAPCS, FGlobalShader);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		SHADER_PARAMETER(uint32, VertexCount)
+		SHADER_PARAMETER(uint32, NumKeyPoints)
 
-		SHADER_PARAMETER(FVector3f, MinBound)
-		SHADER_PARAMETER(FVector3f, MaxBound)
+		//SHADER_PARAMETER(FVector3f, MinBound)
+		//SHADER_PARAMETER(FVector3f, MaxBound)
+		SHADER_PARAMETER(FVector3f, BoxExtent)
 
-		SHADER_PARAMETER(uint32, TextureWidth)
-		SHADER_PARAMETER(uint32, TextureHeight)
+		SHADER_PARAMETER_SRV(Texture2D<FVector4f>, InputTexture)
+		//SHADER_PARAMETER(uint32, TextureWidth)
+		//SHADER_PARAMETER(uint32, TextureHeight)
 
-		SHADER_PARAMETER_SRV(StructuredBuffer<FVector3f>, VertexPositions)
-		SHADER_PARAMETER_SRV(StructuredBuffer<FVector2f>, VertexUVs)
+		SHADER_PARAMETER_SRV(StructuredBuffer<FVector4f>, KeyPositions)
+		//SHADER_PARAMETER_SRV(StructuredBuffer<FVector3f>, VertexPositions)
+		//SHADER_PARAMETER_SRV(StructuredBuffer<FVector2f>, VertexUVs)
 
 		SHADER_PARAMETER_UAV(RWTexture2D<FVector4f>, OutputTexture)
 	END_SHADER_PARAMETER_STRUCT()
@@ -44,26 +47,30 @@ void FAPCSManager::Dispatch(
 
 	// 创建参数结构体，并将参数传递给着色器
 	FAPCS::FParameters ShaderParams;
-	ShaderParams.VertexCount = Parameters.VertexCount;
-	ShaderParams.MinBound = Parameters.MinBound;
-	ShaderParams.MaxBound = Parameters.MaxBound;
-	ShaderParams.TextureWidth = Parameters.TextureWidth;
-	ShaderParams.TextureHeight = Parameters.TextureHeight;
-	ShaderParams.VertexPositions = Parameters.VertexPositions;
-	ShaderParams.VertexUVs = Parameters.VertexUVs;
+	ShaderParams.NumKeyPoints = Parameters.NumKeyPoints;
+	// ShaderParams.MinBound = Parameters.MinBound;
+	// ShaderParams.MaxBound = Parameters.MaxBound;
+	// ShaderParams.TextureWidth = Parameters.TextureWidth;
+	// ShaderParams.TextureHeight = Parameters.TextureHeight;
+	// ShaderParams.VertexPositions = Parameters.VertexPositions;
+	// ShaderParams.VertexUVs = Parameters.VertexUVs;
+	ShaderParams.BoxExtent = Parameters.BoxExtent;
+	ShaderParams.KeyPositions = Parameters.KeyPositions.SRV;
+	ShaderParams.InputTexture = Parameters.InputTexture;
 	ShaderParams.OutputTexture = Parameters.OutputTexture;
-	
+
+
 	// 设置着色器参数
 	SetShaderParameters(RHICmdList, ComputeShader, ComputeShader.GetComputeShader(), ShaderParams);
 	
+	// 正确计算 Dispatch 尺寸
 	FIntVector DispatchSize(
 		FMath::DivideAndRoundUp(Parameters.TextureWidth, ThreadGroupSizeX),
 		FMath::DivideAndRoundUp(Parameters.TextureHeight, ThreadGroupSizeY),
 		1
 	);
 
-	// 调度计算着色器
-	FComputeShaderUtils::Dispatch(RHICmdList, ComputeShader, ShaderParams, FIntVector(8, 8, 1));
+	FComputeShaderUtils::Dispatch(RHICmdList, ComputeShader, ShaderParams, DispatchSize);
 
 	// 清除 UAV（Unordered Access View）资源
 	UnsetShaderUAVs(RHICmdList, ComputeShader, ComputeShader.GetComputeShader());

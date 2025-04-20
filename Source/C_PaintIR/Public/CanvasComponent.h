@@ -20,13 +20,21 @@ struct FCanvasComponentSettings
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
 	int32 TextureLength = 2048;
 
-	// 展开尺寸 应该用不着严丝合缝
+	// 展开尺寸 应该用不着严丝合缝 还真不行，不把纹理贴满就不满足UV映射
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	int32 UnwrapScale = 2000;
+	int32 UnwrapScale = 2048;
 
 	// 正交相机捕获范围
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
 	int32 OrthoWidth = 2048;
+
+	// 当前属性值最小范围
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
+	int32 minVal = 2048;
+
+	// 当前属性值最大范围
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
+	int32 maxVal = 2048;
 
 	// SceneCapture 相对于模型的偏移位置
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
@@ -84,6 +92,10 @@ public:
 	void ApplyUnwrapMaterial(UStaticMeshComponent* MeshComponent);
 
 	void CopyRenderTargetRHI(UTextureRenderTarget2D* SourceRT, UTextureRenderTarget2D* DestRT);
+
+	void UploadKeyPointsToGPU(const TArray<FVector4f>& KeyPoints);
+
+	void ApplyTextureToMaterial(UStaticMeshComponent* MeshComponent, UTexture2D* GeneratedTexture);
 private:
 	ECanvasDrawMode CurrentDrawMode;
 	TMap<FVector, float> DrawnPoints; // 存储已绘制点的位置和对应的值
@@ -114,4 +126,7 @@ private:
 	// CanvasComponent.h
 	UPROPERTY()
 	UTextureRenderTarget2D* RTDisplayIR = nullptr;
+
+	UPROPERTY()
+	UStaticMeshComponent* BackgroundPlane;
 };

@@ -15,20 +15,24 @@ struct FAPCSParameters
 	}
 
 	// 顶点数量
-	uint32 VertexCount;
+	uint32 NumKeyPoints;
 
 	// 包围盒最小值与最大值
-	FVector3f MinBound;
-	FVector3f MaxBound;
+	// FVector3f MinBound;
+	// FVector3f MaxBound;
+	FVector3f BoxExtent;
 
-	// 纹理的宽度和高度
+	// 纹理的宽度和高度 不在着色器里使用，仅在调度时用
 	uint32 TextureWidth;
 	uint32 TextureHeight;
 
 	// 顶点位置和 UV 缓冲区
-	FShaderResourceViewRHIRef VertexPositions;
-	FShaderResourceViewRHIRef VertexUVs;
-
+	// FShaderResourceViewRHIRef VertexPositions;
+	// FShaderResourceViewRHIRef VertexUVs;
+	FRWBufferStructured KeyPositions;
+	
+	FShaderResourceViewRHIRef InputTexture;
+	
 	// 输出纹理的 UAV（Unordered Access View）
 	FUnorderedAccessViewRHIRef OutputTexture;
 
@@ -38,21 +42,23 @@ struct FAPCSParameters
 	// 构造函数
 	FAPCSParameters()
 		: RenderTarget(nullptr),
-		  VertexCount(0),
-		  MinBound(FVector3f::ZeroVector),
-		  MaxBound(FVector3f::ZeroVector),
+		  NumKeyPoints(0),
+		  //MinBound(FVector3f::ZeroVector),
+		  //MaxBound(FVector3f::ZeroVector),
 		  TextureWidth(0),
 		  TextureHeight(0),
+	      BoxExtent(FVector3f::ZeroVector),
 		  TimeStamp(0)
 	{}
 
 	FAPCSParameters(UTextureRenderTarget2D* IORenderTarget)
 		: RenderTarget(IORenderTarget),
-		  VertexCount(0),
-		  MinBound(FVector3f::ZeroVector),
-		  MaxBound(FVector3f::ZeroVector),
+	      NumKeyPoints(0),
+		//   MinBound(FVector3f::ZeroVector),
+		//   MaxBound(FVector3f::ZeroVector),
 		  TextureWidth(0),
 		  TextureHeight(0),
+	      BoxExtent(FVector3f::ZeroVector),
 		  TimeStamp(0)
 	{
 		// 获取渲染目标的大小

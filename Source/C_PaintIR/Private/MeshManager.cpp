@@ -52,6 +52,12 @@ void UMeshManager::LoadMeshes(const FString& AssetPath)
 					// 设置 Actor 的静态网格体
 					NewActor->GetStaticMeshComponent()->SetStaticMesh(StaticMesh);
 
+					// 启用精确碰撞
+					// NewActor->GetStaticMeshComponent()->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName); // 可根据需求调整碰撞配置
+					// NewActor->GetStaticMeshComponent()->BodyInstance.SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+					// NewActor->GetStaticMeshComponent()->SetCollisionObjectType(ECC_WorldStatic);
+					// NewActor->GetStaticMeshComponent()->SetCollisionResponseToAllChannels(ECR_Block);
+					
 					// 设置 Actor 的标签为资产名称
 					FString AssetName = AssetData.AssetName.ToString();
 					NewActor->SetActorLabel(AssetName);
