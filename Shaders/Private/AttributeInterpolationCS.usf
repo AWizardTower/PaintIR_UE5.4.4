@@ -38,6 +38,12 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 	// 从输入纹理中读取归一化坐标，反归一化回世界坐标
 	float4 encoded = InputTexture.Load(int3(uv, 0));
     float3 WorldPos = (encoded.rgb - 0.5) * BoxExtent;
+	// ⭐ 判断是否为纯黑背景（认为黑背景为无效像素）
+    if (all(encoded.rgb == float3(0, 0, 0)))
+    {
+        OutputTexture[uv] = float4(0, 0, 0, 1); // 或者不写入（保持原值），看你需求
+        return;
+    }
 	// 遍历判断是否为关键点（精确匹配），关键点返回原值
     for (int i = 0; i < NumKeyPoints; ++i)
     {

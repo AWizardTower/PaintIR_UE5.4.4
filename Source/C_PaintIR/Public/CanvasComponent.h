@@ -6,6 +6,7 @@
 #include "Components/SceneComponent.h"
 #include "TemperatureDrawingComponent.h"
 #include "CustomDrawingComponent.h"
+#include "PointVisualizerComponent.h"
 #include "Engine/SceneCapture2D.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "CanvasComponent.generated.h"  // 这一句必须在最后一行
@@ -129,4 +130,8 @@ private:
 
 	UPROPERTY()
 	UStaticMeshComponent* BackgroundPlane;
+	
+	// CanvasComponent.h 中加：
+	UPROPERTY()
+	UPointVisualizerComponent* KeyPointVisualizer;
 };

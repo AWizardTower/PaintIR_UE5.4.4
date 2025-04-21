@@ -16,6 +16,9 @@
 // Sets default values for this component's properties
 UCanvasComponent::UCanvasComponent()
 {
+	// 创建子组件并附加
+	KeyPointVisualizer = CreateDefaultSubobject<UPointVisualizerComponent>(TEXT("KeyPointVisualizer"));
+	KeyPointVisualizer->SetupAttachment(this);
 	
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -89,9 +92,8 @@ UCanvasComponent::UCanvasComponent()
 		}
 
 		// 设置相对位置（作为 SceneCapture 的拍摄背景）
-		BackgroundPlane->SetRelativeLocation(FVector(0.0f, 0.0f, 100.0f));
+		BackgroundPlane->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 		BackgroundPlane->SetRelativeRotation(FRotator(0.0f, 0.0f, 0.0f));
-		BackgroundPlane->SetRelativeScale3D(FVector(10.0f, 10.0f, 1.0f)); // 适当放大
 
 		// 创建并设置黑色材质
 		UMaterialInstanceDynamic* Mat = UMaterialInstanceDynamic::Create(LoadObject<UMaterial>(nullptr, TEXT("Material'/Game/Materials/M_Background.M_Background'")), this);
@@ -152,6 +154,16 @@ void UCanvasComponent::InitializeForMesh(UStaticMeshComponent* MeshComponent)
 	UnwrapMaterial->SetVectorParameterValue(FName("UnwrapLocation"), UnwrapLocation);
 	UnwrapMaterial->SetVectorParameterValue(FName("ObjectPosition"), ObjectLocation);
 	UnwrapMaterial->SetVectorParameterValue(FName("ObjectBounds"), BoxExtent);
+	
+	UStaticMesh* PlaneMesh = BackgroundPlane->GetStaticMesh();
+	if (PlaneMesh)
+	{
+		FBoxSphereBounds MeshBounds = PlaneMesh->GetBounds();
+		FVector PlaneMeshSize = MeshBounds.BoxExtent * 2.0f; // 得到原始尺寸（长宽高）
+		BackgroundPlane->SetRelativeScale3D(FVector(Settings.UnwrapScale/PlaneMeshSize.X, Settings.UnwrapScale/PlaneMeshSize.Y, 1.0f)); // 适当放大
+		// PlaneMeshSize.X 就是平面长度
+		// PlaneMeshSize.Y 就是平面宽度
+	}
 }
 
 void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value, UStaticMeshComponent* MeshComponent)
@@ -166,6 +178,12 @@ void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value, USta
 	UE_LOG(LogTemp, Log, TEXT("Clicked at local position: %s, and current value is :%f"), *LocalLocation.ToString(), Value);
 
 	DrawnPoints.Add(LocalLocation, Value);
+
+	// 可视化关键点
+	if (KeyPointVisualizer)
+	{
+		KeyPointVisualizer->AddKeyPoint(LocalLocation, Value);
+	}
 
 	UStaticMesh* StaticMesh = MeshComponent->GetStaticMesh();
 	if (!StaticMesh) return;
