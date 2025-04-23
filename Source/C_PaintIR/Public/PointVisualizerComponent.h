@@ -4,8 +4,30 @@
 
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
+#include "Components/WidgetComponent.h"
 #include "PointVisualizerComponent.generated.h"
 
+USTRUCT()
+struct FKeyPointVisual
+{
+	GENERATED_BODY()
+
+	// 关键点的世界坐标
+	UPROPERTY()
+	FVector Position;
+
+	// 当前值（如温度）
+	UPROPERTY()
+	float Value;
+
+	// 显示球体
+	UPROPERTY()
+	UStaticMeshComponent* SphereComponent = nullptr;
+
+	// 悬浮UI（显示值、修改、删除按钮）
+	UPROPERTY()
+	UWidgetComponent* WidgetComponent = nullptr;
+};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class C_PAINTIR_API UPointVisualizerComponent : public USceneComponent
@@ -36,16 +58,21 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 private:
+	// 应该从画布组件中获取
 	UPROPERTY()
 	TMap<FVector, float> KeyPoints;
 
 	UPROPERTY()
-	TArray<UStaticMeshComponent*> VisualizedPoints;
+	TArray<FKeyPointVisual> KeyPointVisuals;
 
-	UPROPERTY()
+	// 是一个 类的类型（不是实例！是“模板”）
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> KeyPointWidgetClass; // 指向你的蓝图Widget类
+
+	UPROPERTY(EditAnywhere)
 	UStaticMesh* SphereMesh;
 
-	UPROPERTY()
-	UMaterialInterface* LabelMaterialBase;
+	UPROPERTY(EditAnywhere)
+	UMaterialInterface* SphereMaterial;
 		
 };

@@ -14,11 +14,10 @@
   <component name="ChangeListManager">
     <list default="true" id="da4f7d27-5d98-412f-a99f-7fc48c5c0cb3" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.C_PaintIR/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.C_PaintIR/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Materials/M_Unwarp.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Materials/M_Unwarp.uasset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Textures/OutputTexture.png" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Textures/OutputTexture.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Private/CanvasComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Private/CanvasComponent.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Private/MeshManager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Private/MeshManager.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Public/CanvasComponent.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Public/CanvasComponent.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/C_PaintIR.sln.DotSettings.user" beforeDir="false" afterPath="$PROJECT_DIR$/C_PaintIR.sln.DotSettings.user" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/C_PaintIR.uproject" beforeDir="false" afterPath="$PROJECT_DIR$/C_PaintIR.uproject" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Private/PointVisualizerComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Private/PointVisualizerComponent.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Public/PointVisualizerComponent.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Public/PointVisualizerComponent.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -57,33 +56,43 @@
     <setting file="file://$PROJECT_DIR$/../../Epic Games/UE_5.4/Engine/Source/Runtime/TraceLog/standalone_epilogue.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/C_PaintIR.uproject" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Shaders/Private/AttributeInterpolationCS.usf" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Shaders/Private/WhiteNoiseCS.usf" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/C_PaintIR.Build.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Private/CanvasComponent.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Private/CustomDrawingComponent.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Private/KeyPointUserWidget.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Private/MeshManager.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Private/MyGameInstance.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Private/MyGameModeBase.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Private/MyPlayerController.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Private/MyStaticMeshActor.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Private/MyUserWidget.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Private/Painter.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Private/PointVisualizerComponent.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Private/TemperatureDrawingComponent.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Private/TextureUtils.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Public/CanvasComponent.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Public/CustomDrawingComponent.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Public/DrawableInterface.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Public/KeyPointUserWidget.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Public/MeshManager.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Public/MyGameInstance.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Public/MyGameModeBase.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Public/MyPlayerController.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Public/MyStaticMeshActor.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Public/MyUserWidget.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Public/Painter.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Public/PointVisualizerComponent.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Source/C_PaintIR/Public/TextureUtils.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/CustomShadersDeclarations/CustomShadersDeclarations.Build.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Source/CustomShadersDeclarations/Private/APCSDeclaration.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Source/CustomShadersDeclarations/Private/APCSDeclaration.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/CustomShadersDeclarations/Private/CustomShadersDeclarations.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Source/CustomShadersDeclarations/Public/CustomShadersDeclarations.h" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="CurrentFile" />
+    <option name="selectedTabId" value="Toolset" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
@@ -246,6 +255,12 @@
       <workItem from="1745227622329" duration="781000" />
       <workItem from="1745229126518" duration="10249000" />
       <workItem from="1745284485309" duration="14914000" />
+      <workItem from="1745386733945" duration="80000" />
+      <workItem from="1745386837639" duration="10998000" />
+      <workItem from="1745412001893" duration="2790000" />
+      <workItem from="1745416222759" duration="2061000" />
+      <workItem from="1745418320941" duration="131000" />
+      <workItem from="1745418476386" duration="133000" />
     </task>
     <servers />
   </component>
