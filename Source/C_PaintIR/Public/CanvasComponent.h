@@ -31,23 +31,12 @@ struct FCanvasComponentSettings
 
 	// 当前属性值最小范围
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	int32 minVal = 2048;
+	int32 minVal = 0;
 
 	// 当前属性值最大范围
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	int32 maxVal = 2048;
-
-	// SceneCapture 相对于模型的偏移位置
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	FVector CaptureOffset = FVector(0, 0, 200);
-
-	// 捕捉方向（默认朝下看）
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	FRotator CaptureRotation = FRotator(-90, 0, 0);
-
-	// 是否只捕捉一次
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	bool bCaptureOnce = true;
+	int32 maxVal = 100;
+	
 };
 
 UENUM(BlueprintType)
@@ -59,7 +48,7 @@ enum class ECanvasDrawMode : uint8
 	Custom UMETA(DisplayName = "Custom")
 };
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class C_PAINTIR_API UCanvasComponent : public USceneComponent
 {
 	GENERATED_BODY()
@@ -90,13 +79,17 @@ public:
 
 	void SaveTextureToDisk(FTexture2DRHIRef OutputTexture, const FString& FilePath);
 
-	void ApplyUnwrapMaterial(UStaticMeshComponent* MeshComponent);
-
 	void CopyRenderTargetRHI(UTextureRenderTarget2D* SourceRT, UTextureRenderTarget2D* DestRT);
 
 	void UploadKeyPointsToGPU(const TArray<FVector4f>& KeyPoints);
 
 	void ApplyTextureToMaterial(UStaticMeshComponent* MeshComponent, UTexture2D* GeneratedTexture);
+
+private:
+	//换上展开材质
+	TArray<UMaterialInterface*> ApplyUnwrapMaterial(UStaticMeshComponent* MeshComponent);
+	//展开捕获换回的整个流程
+	void CaptureWithUnwrapAndRestore();
 private:
 	ECanvasDrawMode CurrentDrawMode;
 	TMap<FVector, float> DrawnPoints; // 存储已绘制点的位置和对应的值

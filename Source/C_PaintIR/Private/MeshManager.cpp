@@ -5,7 +5,7 @@
 #include "Engine/ObjectLibrary.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
-
+#include "PhysicsEngine/BodySetup.h"
 
 UMeshManager::UMeshManager()
 {
@@ -53,6 +53,16 @@ void UMeshManager::LoadMeshes(const FString& AssetPath)
 					NewActor->GetStaticMeshComponent()->SetStaticMesh(StaticMesh);
 
 					// 启用精确碰撞
+					// 设置碰撞复杂性为复杂作为简单
+					UStaticMeshComponent* MeshComp = NewActor->GetStaticMeshComponent();
+
+					if (StaticMesh && StaticMesh->GetBodySetup())
+					{
+						StaticMesh->GetBodySetup()->CollisionTraceFlag = CTF_UseComplexAsSimple;
+
+						// 确保更新物理状态（MeshComp 必须先设置了 StaticMesh）
+						MeshComp->RecreatePhysicsState();
+					}
 					// NewActor->GetStaticMeshComponent()->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName); // 可根据需求调整碰撞配置
 					// NewActor->GetStaticMeshComponent()->BodyInstance.SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 					// NewActor->GetStaticMeshComponent()->SetCollisionObjectType(ECC_WorldStatic);

@@ -12,10 +12,12 @@
 #include "RHICommandList.h"
 #include "Misc/FileHelper.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Kismet/KismetRenderingLibrary.h"
 
 // Sets default values for this component's properties
 UCanvasComponent::UCanvasComponent()
 {
+
 	// 创建子组件并附加
 	KeyPointVisualizer = CreateDefaultSubobject<UPointVisualizerComponent>(TEXT("KeyPointVisualizer"));
 	KeyPointVisualizer->SetupAttachment(this);
@@ -164,7 +166,17 @@ void UCanvasComponent::InitializeForMesh(UStaticMeshComponent* MeshComponent)
 		// PlaneMeshSize.X 就是平面长度
 		// PlaneMeshSize.Y 就是平面宽度
 	}
+
+	if (RenderTarget)
+	{
+		// 确保不显示脏数据
+		UKismetRenderingLibrary::ClearRenderTarget2D(this, RenderTarget, FLinearColor::Black);
+	}
+
+	CaptureWithUnwrapAndRestore();
+	//如果不再每次展开了，就不能更新纹理了，显然对于每一个画布都需要单独的rendertarget实例了
 }
+
 
 void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value, UStaticMeshComponent* MeshComponent)
 {
@@ -188,11 +200,13 @@ void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value, USta
 	UStaticMesh* StaticMesh = MeshComponent->GetStaticMesh();
 	if (!StaticMesh) return;
 
+	CaptureWithUnwrapAndRestore();
+
 	//1. 展UV
-	ApplyUnwrapMaterial(MeshComponent);
+	//ApplyUnwrapMaterial(MeshComponent);
 
 	//2. 捕获
-	SceneCapture->CaptureScene();
+	//SceneCapture->CaptureScene();
 
 	UTextureRenderTarget2D* LocalRenderTarget = RTDisplayIR;  // 把成员变量拷贝到局部变量
 	TMap<FVector, float> LocalDrawnPoints = DrawnPoints;
@@ -440,16 +454,64 @@ void UCanvasComponent::SetDrawMode(ECanvasDrawMode NewMode)
 	CurrentDrawMode = NewMode;
 }
 
-void UCanvasComponent::ApplyUnwrapMaterial(UStaticMeshComponent* MeshComponent)
+TArray<UMaterialInterface*> UCanvasComponent::ApplyUnwrapMaterial(UStaticMeshComponent* MeshComponent)
 {
+	// 保存原始材质
+	TArray<UMaterialInterface*> OriginalMaterialsArray;
+	
 	if (MeshComponent && UnwrapMaterial)
 	{
 		int32 MaterialCount = MeshComponent->GetNumMaterials();
 		for (int32 Index = 0; Index < MaterialCount; ++Index)
 		{
+			OriginalMaterialsArray.Add(MeshComponent->GetMaterial(Index));
+		}
+		
+		for (int32 Index = 0; Index < MaterialCount; ++Index)
+		{
 			MeshComponent->SetMaterial(Index, UnwrapMaterial);
 		}
+		
 	}
+
+	return OriginalMaterialsArray;
+}
+
+void UCanvasComponent::CaptureWithUnwrapAndRestore()
+{
+	// 获取父 Actor
+	AActor* OwnerActor = GetOwner();
+	if (!OwnerActor) return;
+
+	// 获取 StaticMeshComponent
+	UStaticMeshComponent* MeshComponent = OwnerActor->FindComponentByClass<UStaticMeshComponent>();
+	if (!MeshComponent) return;
+	
+	TArray<UMaterialInterface*> OriginalMaterialsArray = ApplyUnwrapMaterial(MeshComponent);
+
+	// 调用捕捉（会在 GPU 异步进行）
+	SceneCapture->CaptureScene();
+
+	// 延迟一帧再 CaptureScene
+	// FTimerHandle DummyHandle;
+	// GetWorld()->GetTimerManager().SetTimer(DummyHandle, [this]()
+	// {
+	// 	SceneCapture->CaptureScene();
+	// 	// 此时 RenderTarget 绑定的 UI Image 会在下帧更新，画面正确
+	// }, 0.01f, false);
+
+
+
+	// 延迟一帧再恢复原材质，确保 GPU 有时间完成渲染
+	// FTimerHandle TimerHandle;
+	// GetWorld()->GetTimerManager().SetTimer(TimerHandle, [MeshComponent, OriginalMaterialsArray]()
+	// {
+	// 	// 恢复原始材质
+	// 	for (int32 Index = 0; Index < OriginalMaterialsArray.Num(); ++Index)
+	// 	{
+	// 		MeshComponent->SetMaterial(Index, OriginalMaterialsArray[Index]);
+	// 	}
+	// }, 0.05f, false); // 0.05 秒通常等于一帧
 }
 
 // 将生成的纹理结果换给模型
