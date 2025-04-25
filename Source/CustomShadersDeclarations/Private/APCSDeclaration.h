@@ -17,15 +17,15 @@ struct FAPCSParameters
 	// 顶点数量
 	uint32 NumKeyPoints;
 
-	// 包围盒最小值与最大值
-	// FVector3f MinBound;
-	// FVector3f MaxBound;
-	FVector3f BoxExtent;
-
 	// 纹理的宽度和高度 不在着色器里使用，仅在调度时用
 	uint32 TextureWidth;
 	uint32 TextureHeight;
 
+	// 包围盒最小值与最大值
+	// FVector3f MinBound;
+	// FVector3f MaxBound;
+	FVector3f BoxExtent;
+	
 	// 顶点位置和 UV 缓冲区
 	// FShaderResourceViewRHIRef VertexPositions;
 	// FShaderResourceViewRHIRef VertexUVs;

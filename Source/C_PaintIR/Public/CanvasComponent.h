@@ -85,6 +85,11 @@ public:
 
 	void ApplyTextureToMaterial(UStaticMeshComponent* MeshComponent, UTexture2D* GeneratedTexture);
 
+	UFUNCTION()
+	void ModifyPointValue(const FVector& WorldLocation, float NewValue);
+
+	UFUNCTION()
+	void RemovePoint(const FVector& WorldLocation);
 private:
 	//换上展开材质
 	TArray<UMaterialInterface*> ApplyUnwrapMaterial(UStaticMeshComponent* MeshComponent);
@@ -92,6 +97,7 @@ private:
 	void CaptureWithUnwrapAndRestore();
 private:
 	ECanvasDrawMode CurrentDrawMode;
+	
 	TMap<FVector, float> DrawnPoints; // 存储已绘制点的位置和对应的值
 
 	UPROPERTY()

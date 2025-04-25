@@ -29,9 +29,13 @@ struct FCameraViewInfo
 	UPROPERTY(BlueprintReadOnly)
 	FRotator Rotation;
 
-	FCameraViewInfo() {}
+	FCameraViewInfo()
+	: Location(FVector::ZeroVector)
+	, Rotation(FRotator::ZeroRotator)
+	{}
 	FCameraViewInfo(const FVector& InLocation, const FRotator& InRotation)
 		: Location(InLocation), Rotation(InRotation) {}
+	
 };
 /**
  * 

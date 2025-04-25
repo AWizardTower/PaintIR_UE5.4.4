@@ -116,6 +116,7 @@ UCanvasComponent::UCanvasComponent()
 void UCanvasComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	KeyPointVisualizer->OwningCanvas = this;
 }
 
 
@@ -173,7 +174,7 @@ void UCanvasComponent::InitializeForMesh(UStaticMeshComponent* MeshComponent)
 		UKismetRenderingLibrary::ClearRenderTarget2D(this, RenderTarget, FLinearColor::Black);
 	}
 
-	CaptureWithUnwrapAndRestore();
+	// CaptureWithUnwrapAndRestore();
 	//如果不再每次展开了，就不能更新纹理了，显然对于每一个画布都需要单独的rendertarget实例了
 }
 
@@ -200,13 +201,13 @@ void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value, USta
 	UStaticMesh* StaticMesh = MeshComponent->GetStaticMesh();
 	if (!StaticMesh) return;
 
-	CaptureWithUnwrapAndRestore();
+	//CaptureWithUnwrapAndRestore();
 
 	//1. 展UV
-	//ApplyUnwrapMaterial(MeshComponent);
+	ApplyUnwrapMaterial(MeshComponent);
 
 	//2. 捕获
-	//SceneCapture->CaptureScene();
+	SceneCapture->CaptureScene();
 
 	UTextureRenderTarget2D* LocalRenderTarget = RTDisplayIR;  // 把成员变量拷贝到局部变量
 	TMap<FVector, float> LocalDrawnPoints = DrawnPoints;
@@ -307,15 +308,38 @@ if (!RenderTargetRHI.IsValid())
 		// FString FilePath = FPaths::ProjectContentDir() + TEXT("Textures/OutputTexture.png");
 		// SaveTextureToDisk(OutputTexture, FilePath);
 	});
+}
+
+void UCanvasComponent::ModifyPointValue(const FVector& WorldLocation, float NewValue)
+{
+	if (DrawnPoints.Contains(WorldLocation))
+	{
+		DrawnPoints[WorldLocation] = NewValue;
+		//UE_LOG(LogTemp, Log, TEXT("找到了这个节点"));
 	}
+}
 
-
-
-
-        	
-
-
-
+void UCanvasComponent::RemovePoint(const FVector& WorldLocation)
+{
+	if (DrawnPoints.Contains(WorldLocation))
+	{
+		DrawnPoints.Remove(WorldLocation);
+		UE_LOG(LogTemp, Log, TEXT("删除了这个节点"));
+	}
+}
+// 	const float Tolerance = 1e-2f;
+//
+// 	for (auto& Elem : DrawnPoints)
+// 	{
+// 		if (FVector::DistSquared(Elem.Key, WorldLocation) < Tolerance * Tolerance)
+// 		{
+// 			Elem.Value = NewValue;
+// 			UE_LOG(LogTemp, Log, TEXT("Key point updated at %s to value %.2f"), *WorldLocation.ToString(), NewValue);
+// 			return;
+// 		}
+// 	}
+//
+// 	UE_LOG(LogTemp, Warning, TEXT("ModifyKeyPointValue failed: point not found at %s"), *WorldLocation.ToString());
 
 
 // 	ENQUEUE_RENDER_COMMAND(UploadKeyPoints)(

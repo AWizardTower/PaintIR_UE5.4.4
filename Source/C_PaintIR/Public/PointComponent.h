@@ -4,8 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
+#include "Components/WidgetComponent.h"
 #include "PointComponent.generated.h"
 
+class UPointVisualizerComponent;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPointValueChanged, float, NewValue);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class C_PAINTIR_API UPointComponent : public USceneComponent
@@ -20,30 +23,48 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-public:	
+private:
+
+	UPROPERTY(VisibleAnywhere, Category = "Point")
+	UStaticMeshComponent* MeshComponent;
+
+	UPROPERTY(VisibleAnywhere, Category = "Point")
+	UWidgetComponent* WidgetComponent;
+
+public:
+	void Cleanup();
+	
+	UPROPERTY(BlueprintReadWrite, Category = "Point")
+	float Value;
+
+	FVector Position;
+	
+	UPROPERTY()
+	UPointVisualizerComponent* OwningVisualizer;
+	
+	UPROPERTY(BlueprintAssignable)
+	FOnPointValueChanged OnValueChanged;
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Point")
-    FVector Position;
+	// 是一个 类的类型（不是实例！是“模板”）
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> KeyPointWidgetClass; // 指向你的蓝图Widget类
 
-    UPROPERTY(BlueprintReadWrite, Category = "Point")
-    float Value;
+	// 初始化
+    void SetValue(float NewValue);
+	
+    void SetPosition(const FVector& NewPosition);
 
-    //// Íø¸ñÌå×é¼þ£¨ÓÃÓÚÏÔÊ¾¹Ø¼üµãÎ»ÖÃ£©
-    //UPROPERTY(VisibleAnywhere, Category = "Point")
-    //UStaticMeshComponent* MeshComponent;
+	// 更新
+	UFUNCTION(BlueprintCallable)
+	void UpdateValue(float NewValue);
 
-    //// UMG Widget ×é¼þ£¨ÏÔÊ¾¹Ø¼üµãµÄÖµ£©
-    //UPROPERTY(VisibleAnywhere, Category = "Point")
-    //UWidgetComponent* WidgetComponent;
+	UFUNCTION(BlueprintCallable)
+	void RemovePoint();
 
-    //// ¸üÐÂ¹Ø¼üµã¿ÉÊÓ»¯£¨¸üÐÂÍø¸ñºÍUMG£©
-    //void UpdateVisualizer();
+	void InitialUI();
 
-    //// ÐÞ¸Ä¹Ø¼üµãÖµ
-    //void ModifyValue(float NewValue);
-
-    //// ÉèÖÃ¹Ø¼üµãµÄÎ»ÖÃ
-    //void RemovePoint();
+	// 更新关键点可视化（更新网格和UMG）
+	void UpdateVisualizer();
 };

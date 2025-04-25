@@ -10,3 +10,9 @@ void UKeyPointUserWidget::ModifyValue(float NewValue) {
 void UKeyPointUserWidget::RemovePoint() {
 
 }
+
+// KeyPointUserWidget.cpp
+void UKeyPointUserWidget::CommitValue(float NewValue)
+{
+	OnValueCommitted.Broadcast(NewValue);
+}
