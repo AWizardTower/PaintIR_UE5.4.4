@@ -28,7 +28,7 @@ public:
 	void ModifyKeyPointValue(const FVector& WorldPosition, float NewValue);
 
 	// 更新所有关键点的可视化
-	void UpdateAllVisualizers();
+	void UpdateAllVisualizers(const TMap<FVector, float>& NewPoints);
 
 	UPROPERTY()
 	UCanvasComponent* OwningCanvas;

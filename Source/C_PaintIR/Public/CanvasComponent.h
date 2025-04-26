@@ -6,6 +6,7 @@
 #include "Components/SceneComponent.h"
 #include "TemperatureDrawingComponent.h"
 #include "CustomDrawingComponent.h"
+#include "KeyPointData.h"
 #include "PointVisualizerComponent.h"
 #include "Engine/SceneCapture2D.h"
 #include "Components/SceneCaptureComponent2D.h"
@@ -90,6 +91,10 @@ public:
 
 	UFUNCTION()
 	void RemovePoint(const FVector& WorldLocation);
+
+	void LoadFromKeyPointData(const FKeyPointData& Data);
+
+	TMap<FVector, float> DrawnPoints; // 存储已绘制点的位置和对应的值
 private:
 	//换上展开材质
 	TArray<UMaterialInterface*> ApplyUnwrapMaterial(UStaticMeshComponent* MeshComponent);
@@ -97,8 +102,6 @@ private:
 	void CaptureWithUnwrapAndRestore();
 private:
 	ECanvasDrawMode CurrentDrawMode;
-	
-	TMap<FVector, float> DrawnPoints; // 存储已绘制点的位置和对应的值
 
 	UPROPERTY()
 	UTemperatureDrawingComponent* TemperatureDrawingComp;

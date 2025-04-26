@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "MyStaticMeshActor.h"
 #include "UObject/NoExportTypes.h"
 #include "MeshManager.generated.h"
 
@@ -52,9 +53,16 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "MeshManager")
 	TArray<FString> GetActorIndexNameList() const;
+
+	UFUNCTION(BlueprintCallable, Category = "MeshManager")
+	void CollectAllCanvasData();
+
+	UFUNCTION(BlueprintCallable, Category = "MeshManager")
+	void RestoreAllCanvasData();
 private:
 
 	// 存储加载的静态网格体
+	UPROPERTY()
 	TArray<UStaticMesh*> StaticMeshes;
 	
 	UPROPERTY()

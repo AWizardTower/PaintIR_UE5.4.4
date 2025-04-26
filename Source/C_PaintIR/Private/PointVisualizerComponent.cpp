@@ -139,10 +139,22 @@ void UPointVisualizerComponent::RemoveKeyPoint(UPointComponent* PointComponent)
 	OwningCanvas->RemovePoint(PointComponent->Position);
 }
 
-void UPointVisualizerComponent::UpdateAllVisualizers()
+void UPointVisualizerComponent::UpdateAllVisualizers(const TMap<FVector, float>& NewPoints)
 {
-	for (UPointComponent* PointComponent : PointComponents)
+	// 清除旧的可视化点组件
+	for (UPointComponent* PointComp : PointComponents)
 	{
-		PointComponent->UpdateVisualizer();  // 更新每个关键点的可视化
+		if (PointComp)
+		{
+			PointComp->Cleanup();        // 可选：自定义清理逻辑（比如解绑事件）
+			PointComp->DestroyComponent();
+		}
+	}
+	PointComponents.Empty();
+
+	// 添加新的可视化点
+	for (const TPair<FVector, float>& Pair : NewPoints)
+	{
+		AddKeyPoint(Pair.Key, Pair.Value);
 	}
 }

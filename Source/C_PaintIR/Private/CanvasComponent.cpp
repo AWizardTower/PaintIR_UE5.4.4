@@ -3,7 +3,9 @@
 
 #include "CanvasComponent.h"
 
+#include "CanvasSaveManager.h"
 #include "ImageUtils.h"
+#include "PointSaveGame.h"
 #include "Engine/Texture2D.h"
 #include "TextureUtils.h"
 #include "Engine/Texture.h"
@@ -12,6 +14,7 @@
 #include "RHICommandList.h"
 #include "Misc/FileHelper.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetRenderingLibrary.h"
 
 // Sets default values for this component's properties
@@ -299,8 +302,8 @@ if (!RenderTargetRHI.IsValid())
 
 			   // 应用到材质
 			   WeakThis->ApplyTextureToMaterial(WeakMeshComponent.Get(), Texture);
-		   	   FString FilePath = FPaths::ProjectContentDir() + TEXT("Textures/OutputTexture.png");
-		   	   FTextureUtils::SaveTextureToDisk(Texture,FilePath);
+		   	   //FString FilePath = FPaths::ProjectContentDir() + TEXT("Textures/OutputTexture.png");
+		   	   //FTextureUtils::SaveTextureToDisk(Texture,FilePath);
 		   });
 	   });
 		// 如何把生成的纹理应用回模型
@@ -660,3 +663,21 @@ void UCanvasComponent::CopyRenderTargetRHI(UTextureRenderTarget2D* SourceRT, UTe
 	);
 }
 
+void UCanvasComponent::LoadFromKeyPointData(const FKeyPointData& Data)
+{
+	// 1. 覆盖已有数据
+	DrawnPoints = Data.Points;
+
+	UE_LOG(LogTemp, Warning, TEXT("加载到 CanvasComponent 的关键点数量: %d"), DrawnPoints.Num());
+
+	for (const TPair<FVector, float>& Pair : DrawnPoints)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("关键点位置: %s，值: %.2f"), *Pair.Key.ToString(), Pair.Value);
+	}
+
+	//2. 刷新可视化组件（如果你有可视化）
+	if (KeyPointVisualizer)
+	{
+		KeyPointVisualizer->UpdateAllVisualizers(DrawnPoints);
+	}
+}

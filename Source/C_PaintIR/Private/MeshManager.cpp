@@ -1,6 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "C_PaintIR/Public/MeshManager.h"
+
+#include "CanvasSaveManager.h"
+#include "KeyPointData.h"
 #include "MyStaticMeshActor.h"
 #include "Engine/ObjectLibrary.h"
 #include "Engine/StaticMesh.h"
@@ -162,4 +165,84 @@ TArray<FString> UMeshManager::GetActorIndexNameList() const
 		}
 	}
 	return DisplayList;
+}
+
+void UMeshManager::CollectAllCanvasData()
+{
+	TMap<FName, FKeyPointData> AllDrawnData;
+	
+	AllDrawnData.Empty();
+
+	for (AMyStaticMeshActor* Actor : Actors)
+	{
+		if (!Actor) continue;
+
+		UCanvasComponent* CanvasComp = Actor->FindComponentByClass<UCanvasComponent>();
+		if (CanvasComp)
+		{
+			FName ModelName = Actor->GetFName(); // 或者用 CanvasComp->GetAssociatedModelName() 如果你自定义了
+			FKeyPointData PointData = FKeyPointData(CanvasComp->DrawnPoints);
+			AllDrawnData.Add(ModelName, PointData.Points);
+			
+			UE_LOG(LogTemp, Warning, TEXT("保存模型 [%s] 的关键点数据:"), *ModelName.ToString());
+			for (const TPair<FVector, float>& Pair : PointData.Points)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("位置: %s，值: %.2f"), *Pair.Key.ToString(), Pair.Value);
+			}
+		}
+	}
+	// 示例：保存
+	UCanvasSaveManager::SaveAllCanvasData(AllDrawnData);
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("绘制数据保存成功！"));
+	}
+}
+
+void UMeshManager::RestoreAllCanvasData()
+{
+	TMap<FName, FKeyPointData> LoadedData = UCanvasSaveManager::LoadAllCanvasData();
+	
+	// 输出全部加载的数据
+	for (const TPair<FName, FKeyPointData>& ModelPair : LoadedData)
+	{
+		const FName& ModelName = ModelPair.Key;
+		const FKeyPointData& KeyPointData = ModelPair.Value;
+
+		UE_LOG(LogTemp, Warning, TEXT("模型 [%s] 的关键点数据:"), *ModelName.ToString());
+
+		for (const TPair<FVector, float>& PointPair : KeyPointData.Points)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("    位置: %s，值: %.2f"), *PointPair.Key.ToString(), PointPair.Value);
+		}
+	}
+	
+	for (AMyStaticMeshActor* Actor : Actors)
+	{
+		if (!Actor) continue;
+		UCanvasComponent* CanvasComp = Actor->FindComponentByClass<UCanvasComponent>();
+		if (CanvasComp)
+		{
+			FName ModelName = Actor->GetFName();
+			
+			UE_LOG(LogTemp, Warning, TEXT("模型名称:%s"), *ModelName.ToString());
+			
+			if (LoadedData.Contains(ModelName))
+			{
+				CanvasComp->LoadFromKeyPointData( LoadedData[ModelName]);  // 你需要自己实现这个方法
+
+				UE_LOG(LogTemp, Warning, TEXT("加载模型 [%s] 的关键点数据:"), *ModelName.ToString());
+				for (const TPair<FVector, float>& Pair : LoadedData[ModelName].Points)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("位置: %s，值: %.2f"), *Pair.Key.ToString(), Pair.Value);
+				}
+			}
+		}
+	}
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("绘制数据加载完成！"));
+	}
 }
