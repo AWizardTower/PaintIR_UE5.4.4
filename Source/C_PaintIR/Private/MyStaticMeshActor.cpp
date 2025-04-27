@@ -7,7 +7,7 @@ AMyStaticMeshActor::AMyStaticMeshActor()
 {
 	CanvasComponent = CreateDefaultSubobject<UCanvasComponent>(TEXT("CanvasComponent"));
 	CanvasComponent ->SetupAttachment(GetRootComponent());
-	
+	CanvasComponent ->MeshComponent = GetStaticMeshComponent();
 }
 
 void AMyStaticMeshActor::BeginPlay()

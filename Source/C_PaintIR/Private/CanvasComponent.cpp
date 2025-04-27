@@ -131,7 +131,7 @@ void UCanvasComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	// ...
 }
 
-void UCanvasComponent::InitializeForMesh(UStaticMeshComponent* MeshComponent)
+void UCanvasComponent::InitializeForMesh()
 {
 	if (!MeshComponent) return;
 	UE_LOG(LogTemp, Log, TEXT("初始化了组件"));
@@ -181,7 +181,7 @@ void UCanvasComponent::InitializeForMesh(UStaticMeshComponent* MeshComponent)
 	//如果不再每次展开了，就不能更新纹理了，显然对于每一个画布都需要单独的rendertarget实例了
 }
 
-void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value, UStaticMeshComponent* MeshComponent)
+void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value)
 {
 	const FBoxSphereBounds MyBounds = MeshComponent->Bounds;
 	FVector BoxExtent = MyBounds.BoxExtent * 2;
@@ -198,17 +198,22 @@ void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value, USta
 	}
 
 	// 然后直接刷新纹理
-	GenerateTextureFromDrawnPoints(MeshComponent);
+	GenerateTextureFromDrawnPoints();
 }
 
-void UCanvasComponent::GenerateTextureFromDrawnPoints(UStaticMeshComponent* MeshComponent)
+void UCanvasComponent::GenerateTextureFromDrawnPoints()
 {
+	if (DrawnPoints.Num() == 0)
+	{
+		return;
+	}
+
     if (!MeshComponent) return;
     UStaticMesh* StaticMesh = MeshComponent->GetStaticMesh();
     if (!StaticMesh) return;
 
     // 1. 展开UV
-    ApplyUnwrapMaterial(MeshComponent);
+    ApplyUnwrapMaterial();
 
     // 2. 捕获场景
     SceneCapture->CaptureScene();
@@ -282,7 +287,7 @@ void UCanvasComponent::GenerateTextureFromDrawnPoints(UStaticMeshComponent* Mesh
                     if (!WeakThis.IsValid() || !WeakMeshComponent.IsValid()) return;
 
                     GeneratedIRTexture = FTextureUtils::CreateTexture2DFromRaw(PixelData, Width, Height);
-                    WeakThis->ApplyTextureToMaterial(WeakMeshComponent.Get(), GeneratedIRTexture);
+                    WeakThis->ApplyTextureToMaterial(GeneratedIRTexture);
                 });
             });
         }
@@ -429,6 +434,8 @@ void UCanvasComponent::ModifyPointValue(const FVector& WorldLocation, float NewV
 		DrawnPoints[WorldLocation] = NewValue;
 		//UE_LOG(LogTemp, Log, TEXT("找到了这个节点"));
 	}
+
+	GenerateTextureFromDrawnPoints();
 }
 
 void UCanvasComponent::RemovePoint(const FVector& WorldLocation)
@@ -438,6 +445,8 @@ void UCanvasComponent::RemovePoint(const FVector& WorldLocation)
 		DrawnPoints.Remove(WorldLocation);
 		UE_LOG(LogTemp, Log, TEXT("删除了这个节点"));
 	}
+	
+	GenerateTextureFromDrawnPoints();
 }
 // 	const float Tolerance = 1e-2f;
 //
@@ -590,7 +599,7 @@ void UCanvasComponent::SetDrawMode(ECanvasDrawMode NewMode)
 	CurrentDrawMode = NewMode;
 }
 
-TArray<UMaterialInterface*> UCanvasComponent::ApplyUnwrapMaterial(UStaticMeshComponent* MeshComponent)
+TArray<UMaterialInterface*> UCanvasComponent::ApplyUnwrapMaterial()
 {
 	// 保存原始材质
 	TArray<UMaterialInterface*> OriginalMaterialsArray;
@@ -620,10 +629,10 @@ void UCanvasComponent::CaptureWithUnwrapAndRestore()
 	if (!OwnerActor) return;
 
 	// 获取 StaticMeshComponent
-	UStaticMeshComponent* MeshComponent = OwnerActor->FindComponentByClass<UStaticMeshComponent>();
-	if (!MeshComponent) return;
+	//UStaticMeshComponent* MeshComponent = OwnerActor->FindComponentByClass<UStaticMeshComponent>();
+	//if (!MeshComponent) return;
 	
-	TArray<UMaterialInterface*> OriginalMaterialsArray = ApplyUnwrapMaterial(MeshComponent);
+	TArray<UMaterialInterface*> OriginalMaterialsArray = ApplyUnwrapMaterial();
 
 	// 调用捕捉（会在 GPU 异步进行）
 	SceneCapture->CaptureScene();
@@ -651,7 +660,7 @@ void UCanvasComponent::CaptureWithUnwrapAndRestore()
 }
 
 // 将生成的纹理结果换给模型
-void UCanvasComponent::ApplyTextureToMaterial(UStaticMeshComponent* MeshComponent, UTexture2D* GeneratedTexture)
+void UCanvasComponent::ApplyTextureToMaterial(UTexture2D* GeneratedTexture)
 {
 	if (!MeshComponent || !IRMaterial || !GeneratedTexture) return;
 
@@ -666,7 +675,7 @@ void UCanvasComponent::ApplyTextureToMaterial(UStaticMeshComponent* MeshComponen
 	}
 }
 
-void UCanvasComponent::SetMeshMaterial(UStaticMeshComponent* MeshComponent)
+void UCanvasComponent::SetMeshMaterial()
 {
 	if (MeshComponent)
 	{
@@ -789,6 +798,9 @@ void UCanvasComponent::LoadFromKeyPointData(const FKeyPointData& Data)
 	{
 		KeyPointVisualizer->UpdateAllVisualizers(DrawnPoints);
 	}
+
+	//刷新
+	GenerateTextureFromDrawnPoints();
 }
 
 void UCanvasComponent::ExportTextureToDisk(const FString& FilePath)

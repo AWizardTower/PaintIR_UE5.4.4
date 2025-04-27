@@ -20,15 +20,15 @@ struct FCanvasComponentSettings
 
 	// RenderTarget 尺寸
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	int32 TextureLength = 2048;
+	int32 TextureLength = 256;
 
 	// 展开尺寸 应该用不着严丝合缝 还真不行，不把纹理贴满就不满足UV映射
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	int32 UnwrapScale = 2048;
+	int32 UnwrapScale = 256;
 
 	// 正交相机捕获范围
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	int32 OrthoWidth = 2048;
+	int32 OrthoWidth = 256;
 
 	// 当前属性值最小范围
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
@@ -63,18 +63,18 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
-	void InitializeForMesh(UStaticMeshComponent* MeshComponent);
+	void InitializeForMesh();
 
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void DrawPoint(const FVector& WorldLocation, float Value, UStaticMeshComponent* MeshComponent);
+	void DrawPoint(const FVector& WorldLocation, float Value);
 
 	// 设置当前绘制模式
 	void SetDrawMode(ECanvasDrawMode NewMode);
 
 	// 设置网格材质的纹理
-	void SetMeshMaterial(UStaticMeshComponent* MeshComponent);
+	void SetMeshMaterial();
 
 	void UploadVertexBufferToGPU(const TArray<FVector3f>& VertexPositions, const TArray<FVector2f>& VertexUVs, const FBoxSphereBounds& Bounds);
 
@@ -84,7 +84,7 @@ public:
 
 	void UploadKeyPointsToGPU(const TArray<FVector4f>& KeyPoints);
 
-	void ApplyTextureToMaterial(UStaticMeshComponent* MeshComponent, UTexture2D* GeneratedTexture);
+	void ApplyTextureToMaterial(UTexture2D* GeneratedTexture);
 
 	UFUNCTION()
 	void ModifyPointValue(const FVector& WorldLocation, float NewValue);
@@ -94,19 +94,23 @@ public:
 
 	void LoadFromKeyPointData(const FKeyPointData& Data);
 
-	void GenerateTextureFromDrawnPoints(UStaticMeshComponent* MeshComponent);
+	void GenerateTextureFromDrawnPoints();
 
 	TMap<FVector, float> DrawnPoints; // 存储已绘制点的位置和对应的值
 
 	void ExportTextureToDisk(const FString& FilePath);
-private:
-	UPROPERTY()
+
+	UPROPERTY(BlueprintReadWrite, Category = "Generated IR Texture")
 	UTexture2D* GeneratedIRTexture = nullptr;
+
+	UPROPERTY()
+	UStaticMeshComponent* MeshComponent;
+private:
 	//换上展开材质
-	TArray<UMaterialInterface*> ApplyUnwrapMaterial(UStaticMeshComponent* MeshComponent);
+	TArray<UMaterialInterface*> ApplyUnwrapMaterial();
 	//展开捕获换回的整个流程
 	void CaptureWithUnwrapAndRestore();
-private:
+
 	ECanvasDrawMode CurrentDrawMode;
 
 	UPROPERTY()

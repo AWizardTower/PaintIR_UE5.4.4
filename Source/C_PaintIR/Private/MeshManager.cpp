@@ -84,7 +84,7 @@ void UMeshManager::LoadMeshes(const FString& AssetPath)
 					NewActor->SetActorScale3D(FVector(1.f, 1.f, 1.f));
 
 					// 根据模型初始化组件参数
-					NewActor->CanvasComponent->InitializeForMesh(NewActor->GetStaticMeshComponent());
+					NewActor->CanvasComponent->InitializeForMesh();
 
 					// 将新创建的 Actor 添加到数组中
 					Actors.Add(NewActor);
