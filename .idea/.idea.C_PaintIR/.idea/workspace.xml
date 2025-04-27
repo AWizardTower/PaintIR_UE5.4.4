@@ -17,6 +17,9 @@
       <change beforePath="$PROJECT_DIR$/Content/Materials/M_IR.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Materials/M_IR.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/UI/UMG_Main.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/UMG_Main.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Private/CanvasComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Private/CanvasComponent.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Private/MeshManager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Private/MeshManager.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Public/CanvasComponent.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Public/CanvasComponent.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Public/MeshManager.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Public/MeshManager.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -276,6 +279,8 @@
       <workItem from="1745595008203" duration="3149000" />
       <workItem from="1745652943931" duration="5559000" />
       <workItem from="1745675046474" duration="3515000" />
+      <workItem from="1745722461296" duration="2415000" />
+      <workItem from="1745728622877" duration="3206000" />
     </task>
     <servers />
   </component>

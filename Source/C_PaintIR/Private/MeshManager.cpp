@@ -9,6 +9,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
 #include "PhysicsEngine/BodySetup.h"
+#include "Misc/Paths.h" // 注意要加这个，处理路径
 
 UMeshManager::UMeshManager()
 {
@@ -48,8 +49,12 @@ void UMeshManager::LoadMeshes(const FString& AssetPath)
 				// 计算当前 Actor 的位置
 				FVector ActorLocation = StartLocation + FVector(Index * OffsetX, 0.f, 0.f);
 
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.Name = FName(*AssetData.AssetName.ToString());
+				AMyStaticMeshActor* NewActor = World->SpawnActor<AMyStaticMeshActor>(AMyStaticMeshActor::StaticClass(), ActorLocation, FRotator::ZeroRotator, SpawnParams);
+				
 				// 在世界中生成一个新的 AStaticMeshActor
-				AMyStaticMeshActor* NewActor = World->SpawnActor<AMyStaticMeshActor>(AMyStaticMeshActor::StaticClass(), ActorLocation, FRotator::ZeroRotator);
+				//AMyStaticMeshActor* NewActor = World->SpawnActor<AMyStaticMeshActor>(AMyStaticMeshActor::StaticClass(), ActorLocation, FRotator::ZeroRotator);
 				if (NewActor)
 				{
 					// 设置 Actor 的静态网格体
@@ -244,5 +249,52 @@ void UMeshManager::RestoreAllCanvasData()
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("绘制数据加载完成！"));
+	}
+}
+
+void UMeshManager::ExportCurrentCanvasTexture()
+{
+	FString DirectoryPath = FPaths::ProjectContentDir() + TEXT("Textures");
+	AMyStaticMeshActor* CurrentActor = GetCurrentActor();
+	if (CurrentActor)
+	{
+		UCanvasComponent* CanvasComp = CurrentActor->FindComponentByClass<UCanvasComponent>();
+		if (CanvasComp)
+		{
+			FString FileName = FString::Printf(TEXT("%s/%s.png"), *DirectoryPath, *CurrentActor->GetMeshName());
+			CanvasComp->ExportTextureToDisk(FileName);
+
+			UE_LOG(LogTemp, Log, TEXT("导出当前纹理：%s"), *FileName);
+
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("保存当前纹理！"));
+			}
+		}
+	}
+}
+
+void UMeshManager::ExportAllCanvasTextures()
+{
+	FString DirectoryPath = FPaths::ProjectContentDir() + TEXT("Textures");
+	for (AMyStaticMeshActor* Actor : Actors)
+	{
+		if (Actor)
+		{
+			UCanvasComponent* CanvasComp = Actor->FindComponentByClass<UCanvasComponent>();
+			if (CanvasComp)
+			{
+				FString FileName = FString::Printf(TEXT("%s/%s.png"), *DirectoryPath, *Actor->GetMeshName());
+				CanvasComp->ExportTextureToDisk(FileName);
+
+				UE_LOG(LogTemp, Log, TEXT("导出纹理：%s"), *FileName);
+				
+			}
+		}
+	}
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("保存所有纹理！"));
 	}
 }

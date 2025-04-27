@@ -94,8 +94,14 @@ public:
 
 	void LoadFromKeyPointData(const FKeyPointData& Data);
 
+	void GenerateTextureFromDrawnPoints(UStaticMeshComponent* MeshComponent);
+
 	TMap<FVector, float> DrawnPoints; // 存储已绘制点的位置和对应的值
+
+	void ExportTextureToDisk(const FString& FilePath);
 private:
+	UPROPERTY()
+	UTexture2D* GeneratedIRTexture = nullptr;
 	//换上展开材质
 	TArray<UMaterialInterface*> ApplyUnwrapMaterial(UStaticMeshComponent* MeshComponent);
 	//展开捕获换回的整个流程

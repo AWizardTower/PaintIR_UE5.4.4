@@ -59,6 +59,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "MeshManager")
 	void RestoreAllCanvasData();
+
+	UFUNCTION(BlueprintCallable, Category = "MeshManager")
+	void ExportCurrentCanvasTexture();
+
+	UFUNCTION(BlueprintCallable, Category = "MeshManager")
+	void ExportAllCanvasTextures();
 private:
 
 	// 存储加载的静态网格体

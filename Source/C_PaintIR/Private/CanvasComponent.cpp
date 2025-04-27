@@ -181,16 +181,12 @@ void UCanvasComponent::InitializeForMesh(UStaticMeshComponent* MeshComponent)
 	//如果不再每次展开了，就不能更新纹理了，显然对于每一个画布都需要单独的rendertarget实例了
 }
 
-
 void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value, UStaticMeshComponent* MeshComponent)
 {
 	const FBoxSphereBounds MyBounds = MeshComponent->Bounds;
-	// 获取物体包围盒的大小
-	FVector BoxExtent = MyBounds.BoxExtent*2;
-
-	//存的时候存相对坐标总行了吧
-	// 将世界坐标转换为组件的局部坐标
+	FVector BoxExtent = MyBounds.BoxExtent * 2;
 	FVector LocalLocation = GetComponentTransform().InverseTransformPosition(WorldLocation);
+
 	UE_LOG(LogTemp, Log, TEXT("Clicked at local position: %s, and current value is :%f"), *LocalLocation.ToString(), Value);
 
 	DrawnPoints.Add(LocalLocation, Value);
@@ -201,119 +197,230 @@ void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value, USta
 		KeyPointVisualizer->AddKeyPoint(LocalLocation, Value);
 	}
 
-	UStaticMesh* StaticMesh = MeshComponent->GetStaticMesh();
-	if (!StaticMesh) return;
+	// 然后直接刷新纹理
+	GenerateTextureFromDrawnPoints(MeshComponent);
+}
 
-	//CaptureWithUnwrapAndRestore();
-
-	//1. 展UV
-	ApplyUnwrapMaterial(MeshComponent);
-
-	//2. 捕获
-	SceneCapture->CaptureScene();
-
-	UTextureRenderTarget2D* LocalRenderTarget = RTDisplayIR;  // 把成员变量拷贝到局部变量
-	TMap<FVector, float> LocalDrawnPoints = DrawnPoints;
-
-	FIntPoint Size = FIntPoint(LocalRenderTarget->SizeX, LocalRenderTarget->SizeY);
-	FTextureRenderTargetResource* RenderTargetResource = LocalRenderTarget->GameThread_GetRenderTargetResource();
-
-	TWeakObjectPtr<UCanvasComponent> WeakThis(this);
-	TWeakObjectPtr<UStaticMeshComponent> WeakMeshComponent(MeshComponent); // 确保 MeshComponent 传进来
-	
-	ENQUEUE_RENDER_COMMAND(RunInterpolationCS)(
-	[this,WeakThis, WeakMeshComponent,Size,RenderTargetResource, LocalDrawnPoints, BoxExtent](FRHICommandListImmediate& RHICmdList)
-	{
-
-		// 1. 获取输入纹理 SRV	
-		FTexture2DRHIRef RenderTargetRHI = RenderTargetResource->GetRenderTargetTexture();
-		FShaderResourceViewRHIRef InputTextureSRV = RHICreateShaderResourceView(RenderTargetRHI, 0);
-
-if (!RenderTargetRHI.IsValid())
+void UCanvasComponent::GenerateTextureFromDrawnPoints(UStaticMeshComponent* MeshComponent)
 {
-	UE_LOG(LogTemp, Error, TEXT("RenderTargetRHI is invalid!"));
+    if (!MeshComponent) return;
+    UStaticMesh* StaticMesh = MeshComponent->GetStaticMesh();
+    if (!StaticMesh) return;
+
+    // 1. 展开UV
+    ApplyUnwrapMaterial(MeshComponent);
+
+    // 2. 捕获场景
+    SceneCapture->CaptureScene();
+
+    // 3. 开始生成纹理
+    UTextureRenderTarget2D* LocalRenderTarget = RTDisplayIR;
+    TMap<FVector, float> LocalDrawnPoints = DrawnPoints;
+    FVector BoxExtent = MeshComponent->Bounds.BoxExtent * 2;
+
+    FIntPoint Size(LocalRenderTarget->SizeX, LocalRenderTarget->SizeY);
+    FTextureRenderTargetResource* RenderTargetResource = LocalRenderTarget->GameThread_GetRenderTargetResource();
+
+    TWeakObjectPtr<UCanvasComponent> WeakThis(this);
+    TWeakObjectPtr<UStaticMeshComponent> WeakMeshComponent(MeshComponent);
+
+    ENQUEUE_RENDER_COMMAND(RunInterpolationCS)(
+        [this, WeakThis, WeakMeshComponent, Size, RenderTargetResource, LocalDrawnPoints, BoxExtent](FRHICommandListImmediate& RHICmdList)
+        {
+            // 1. 获取输入纹理 SRV
+            FTexture2DRHIRef RenderTargetRHI = RenderTargetResource->GetRenderTargetTexture();
+            if (!RenderTargetRHI.IsValid())
+            {
+                UE_LOG(LogTemp, Error, TEXT("RenderTargetRHI is invalid!"));
+                return;
+            }
+            FShaderResourceViewRHIRef InputTextureSRV = RHICreateShaderResourceView(RenderTargetRHI, 0);
+
+            // 2. 上传关键点数据
+            FRWBufferStructured GPUKeyBuffer;
+            TArray<FVector4f> KeyPointArray;
+            for (const auto& Pair : LocalDrawnPoints)
+            {
+                KeyPointArray.Add(FVector4f(Pair.Key.X, Pair.Key.Y, Pair.Key.Z, Pair.Value));
+            }
+            if (KeyPointArray.Num() > 0)
+            {
+                GPUKeyBuffer.Initialize(TEXT("KeyBuffer"), sizeof(FVector4f), KeyPointArray.Num(), BUF_ShaderResource | BUF_Static);
+                void* BufferData = RHILockBuffer(GPUKeyBuffer.Buffer, 0, sizeof(FVector4f) * KeyPointArray.Num(), RLM_WriteOnly);
+                FMemory::Memcpy(BufferData, KeyPointArray.GetData(), sizeof(FVector4f) * KeyPointArray.Num());
+                RHIUnlockBuffer(GPUKeyBuffer.Buffer);
+            }
+
+            // 3. 创建输出纹理 UAV
+            EPixelFormat PixelFormat = PF_R8G8B8A8;
+            FRHITextureCreateDesc Desc = FRHITextureCreateDesc::Create2D(TEXT("MyRWTexture"))
+                .SetExtent(Size.X, Size.Y)
+                .SetFormat(PixelFormat)
+                .SetFlags(TexCreate_ShaderResource | TexCreate_UAV | TexCreate_RenderTargetable)
+                .SetNumMips(1);
+
+            FTexture2DRHIRef OutputTexture = RHICreateTexture(Desc)->GetTexture2D();
+            FUnorderedAccessViewRHIRef OutputTextureUAV = RHICmdList.CreateUnorderedAccessView(OutputTexture);
+
+            // 4. 调用 Dispatch
+            FAPCSParameters ShaderParameters;
+            ShaderParameters.NumKeyPoints = LocalDrawnPoints.Num();
+            ShaderParameters.BoxExtent = FVector3f(BoxExtent);
+            ShaderParameters.KeyPositions = GPUKeyBuffer;
+            ShaderParameters.OutputTexture = OutputTextureUAV;
+            ShaderParameters.InputTexture = InputTextureSRV;
+            ShaderParameters.TextureWidth = Size.X;
+            ShaderParameters.TextureHeight = Size.Y;
+
+            FAPCSManager::Dispatch(RHICmdList, ShaderParameters);
+
+            // 5. 读取并回到CPU，生成Texture2D
+            FTextureUtils::ReadTextureToCPU(OutputTexture, [this,WeakThis, WeakMeshComponent](TArray<FColor>& PixelData, int32 Width, int32 Height)
+            {
+                AsyncTask(ENamedThreads::GameThread, [this,WeakThis, WeakMeshComponent, PixelData, Width, Height]()
+                {
+                    if (!WeakThis.IsValid() || !WeakMeshComponent.IsValid()) return;
+
+                    GeneratedIRTexture = FTextureUtils::CreateTexture2DFromRaw(PixelData, Width, Height);
+                    WeakThis->ApplyTextureToMaterial(WeakMeshComponent.Get(), GeneratedIRTexture);
+                });
+            });
+        }
+    );
 }
 
-		// 2. 上传关键点数据
-		FRWBufferStructured GPUKeyBuffer;
-		TArray<FVector4f> KeyPointArray;
-		for (const auto& Pair : LocalDrawnPoints)
-		{
-			KeyPointArray.Add(FVector4f(Pair.Key.X, Pair.Key.Y, Pair.Key.Z, Pair.Value));
-		}
-
-		UE_LOG(LogTemp, Log, TEXT("Uploading %d keypoints:"), LocalDrawnPoints.Num());
-
-		for (const auto& Pair : LocalDrawnPoints)
-		{
-			const FVector& Pos = Pair.Key;
-			float Val = Pair.Value;
-			UE_LOG(LogTemp, Log, TEXT("  KeyPoint: (%f, %f, %f), Value: %f"), Pos.X, Pos.Y, Pos.Z, Val);
-
-			KeyPointArray.Add(FVector4f(Pos.X, Pos.Y, Pos.Z, Val));
-		}
-		
-		if (KeyPointArray.Num() > 0)
-		{
-			GPUKeyBuffer.Initialize(TEXT("KeyBuffer"), sizeof(FVector4f), KeyPointArray.Num(), BUF_ShaderResource | BUF_Static);
-			void* BufferData = RHILockBuffer(GPUKeyBuffer.Buffer, 0, sizeof(FVector4f) * KeyPointArray.Num(), RLM_WriteOnly);
-			FMemory::Memcpy(BufferData, KeyPointArray.GetData(), sizeof(FVector4f) * KeyPointArray.Num());
-			RHIUnlockBuffer(GPUKeyBuffer.Buffer);
-		}
-		
-		// 3. 创建输出纹理 UAV
-		// 尺寸同输入纹理
-		EPixelFormat PixelFormat = PF_R8G8B8A8; // 或者 PF_R32G32B32A32_FLOAT，视需求而定PF_R32_FLOAT
-		FRHIResourceCreateInfo CreateInfo(TEXT("OutputTexture"));
-		// 创建描述结构体
-		FRHITextureCreateDesc Desc = FRHITextureCreateDesc::Create2D(TEXT("MyRWTexture"))
-			.SetExtent(Size.X, Size.Y)
-			.SetFormat(PixelFormat)
-			.SetFlags(TexCreate_ShaderResource | TexCreate_UAV | TexCreate_RenderTargetable)
-			.SetNumMips(1);
-		FTexture2DRHIRef OutputTexture = RHICreateTexture(Desc)->GetTexture2D();
-		FUnorderedAccessViewRHIRef OutputTextureUAV = RHICmdList.CreateUnorderedAccessView(OutputTexture);
-		// 可选）创建 SRV（只读访问，适用于 Shader 中 Texture2D<> 输入）
-		FShaderResourceViewRHIRef OutputTextureSRV = RHICreateShaderResourceView(OutputTexture, 0);
-		
-		// 4. 调用 Dispatch
-		FAPCSParameters ShaderParameters;
-		ShaderParameters.NumKeyPoints = LocalDrawnPoints.Num();
-		// 由于 GPU Shader 一般使用 float 类型，Shader 参数结构体中也应使用 FVector3f
-		ShaderParameters.BoxExtent = FVector3f(BoxExtent);
-		ShaderParameters.KeyPositions = GPUKeyBuffer;
-		ShaderParameters.OutputTexture = OutputTextureUAV;
-		ShaderParameters.InputTexture = InputTextureSRV;
-		ShaderParameters.TextureWidth = Size.X;
-		ShaderParameters.TextureHeight = Size.Y;
-
-		FAPCSManager::Dispatch(RHICmdList, ShaderParameters);
-		
-		// 读取 OutputTexture 的数据并传回 CPU
-	   FTextureUtils::ReadTextureToCPU(OutputTexture, [WeakThis, WeakMeshComponent](TArray<FColor>& PixelData, int32 Width, int32 Height)
-	   {
-		   // 在 GameThread 中执行
-		   AsyncTask(ENamedThreads::GameThread, [WeakThis, WeakMeshComponent, PixelData, Width, Height]()
-		   {
-			   if (!WeakThis.IsValid() || !WeakMeshComponent.IsValid()) return;
-
-			   // 创建 Texture2D
-			   UTexture2D* Texture = FTextureUtils::CreateTexture2DFromRaw(PixelData, Width, Height);
-
-			   // 应用到材质
-			   WeakThis->ApplyTextureToMaterial(WeakMeshComponent.Get(), Texture);
-		   	   //FString FilePath = FPaths::ProjectContentDir() + TEXT("Textures/OutputTexture.png");
-		   	   //FTextureUtils::SaveTextureToDisk(Texture,FilePath);
-		   });
-	   });
-
-		//把生成结果存到类变量中即可
-		// 如何把生成的纹理应用回模型
-		//5. 可选：导出纹理
-		// FString FilePath = FPaths::ProjectContentDir() + TEXT("Textures/OutputTexture.png");
-		// SaveTextureToDisk(OutputTexture, FilePath);
-	});
-}
+// void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value, UStaticMeshComponent* MeshComponent)
+// {
+// 	const FBoxSphereBounds MyBounds = MeshComponent->Bounds;
+// 	// 获取物体包围盒的大小
+// 	FVector BoxExtent = MyBounds.BoxExtent*2;
+//
+// 	//存的时候存相对坐标总行了吧
+// 	// 将世界坐标转换为组件的局部坐标
+// 	FVector LocalLocation = GetComponentTransform().InverseTransformPosition(WorldLocation);
+// 	UE_LOG(LogTemp, Log, TEXT("Clicked at local position: %s, and current value is :%f"), *LocalLocation.ToString(), Value);
+//
+// 	DrawnPoints.Add(LocalLocation, Value);
+//
+// 	// 可视化关键点
+// 	if (KeyPointVisualizer)
+// 	{
+// 		KeyPointVisualizer->AddKeyPoint(LocalLocation, Value);
+// 	}
+//
+// 	UStaticMesh* StaticMesh = MeshComponent->GetStaticMesh();
+// 	if (!StaticMesh) return;
+//
+// 	//CaptureWithUnwrapAndRestore();
+//
+// 	//1. 展UV
+// 	ApplyUnwrapMaterial(MeshComponent);
+//
+// 	//2. 捕获
+// 	SceneCapture->CaptureScene();
+//
+// 	UTextureRenderTarget2D* LocalRenderTarget = RTDisplayIR;  // 把成员变量拷贝到局部变量
+// 	TMap<FVector, float> LocalDrawnPoints = DrawnPoints;
+//
+// 	FIntPoint Size = FIntPoint(LocalRenderTarget->SizeX, LocalRenderTarget->SizeY);
+// 	FTextureRenderTargetResource* RenderTargetResource = LocalRenderTarget->GameThread_GetRenderTargetResource();
+//
+// 	TWeakObjectPtr<UCanvasComponent> WeakThis(this);
+// 	TWeakObjectPtr<UStaticMeshComponent> WeakMeshComponent(MeshComponent); // 确保 MeshComponent 传进来
+// 	
+// 	ENQUEUE_RENDER_COMMAND(RunInterpolationCS)(
+// 	[this,WeakThis, WeakMeshComponent,Size,RenderTargetResource, LocalDrawnPoints, BoxExtent](FRHICommandListImmediate& RHICmdList)
+// 	{
+//
+// 		// 1. 获取输入纹理 SRV	
+// 		FTexture2DRHIRef RenderTargetRHI = RenderTargetResource->GetRenderTargetTexture();
+// 		FShaderResourceViewRHIRef InputTextureSRV = RHICreateShaderResourceView(RenderTargetRHI, 0);
+//
+// if (!RenderTargetRHI.IsValid())
+// {
+// 	UE_LOG(LogTemp, Error, TEXT("RenderTargetRHI is invalid!"));
+// }
+//
+// 		// 2. 上传关键点数据
+// 		FRWBufferStructured GPUKeyBuffer;
+// 		TArray<FVector4f> KeyPointArray;
+// 		for (const auto& Pair : LocalDrawnPoints)
+// 		{
+// 			KeyPointArray.Add(FVector4f(Pair.Key.X, Pair.Key.Y, Pair.Key.Z, Pair.Value));
+// 		}
+//
+// 		UE_LOG(LogTemp, Log, TEXT("Uploading %d keypoints:"), LocalDrawnPoints.Num());
+//
+// 		for (const auto& Pair : LocalDrawnPoints)
+// 		{
+// 			const FVector& Pos = Pair.Key;
+// 			float Val = Pair.Value;
+// 			UE_LOG(LogTemp, Log, TEXT("  KeyPoint: (%f, %f, %f), Value: %f"), Pos.X, Pos.Y, Pos.Z, Val);
+//
+// 			KeyPointArray.Add(FVector4f(Pos.X, Pos.Y, Pos.Z, Val));
+// 		}
+// 		
+// 		if (KeyPointArray.Num() > 0)
+// 		{
+// 			GPUKeyBuffer.Initialize(TEXT("KeyBuffer"), sizeof(FVector4f), KeyPointArray.Num(), BUF_ShaderResource | BUF_Static);
+// 			void* BufferData = RHILockBuffer(GPUKeyBuffer.Buffer, 0, sizeof(FVector4f) * KeyPointArray.Num(), RLM_WriteOnly);
+// 			FMemory::Memcpy(BufferData, KeyPointArray.GetData(), sizeof(FVector4f) * KeyPointArray.Num());
+// 			RHIUnlockBuffer(GPUKeyBuffer.Buffer);
+// 		}
+// 		
+// 		// 3. 创建输出纹理 UAV
+// 		// 尺寸同输入纹理
+// 		EPixelFormat PixelFormat = PF_R8G8B8A8; // 或者 PF_R32G32B32A32_FLOAT，视需求而定PF_R32_FLOAT
+// 		FRHIResourceCreateInfo CreateInfo(TEXT("OutputTexture"));
+// 		// 创建描述结构体
+// 		FRHITextureCreateDesc Desc = FRHITextureCreateDesc::Create2D(TEXT("MyRWTexture"))
+// 			.SetExtent(Size.X, Size.Y)
+// 			.SetFormat(PixelFormat)
+// 			.SetFlags(TexCreate_ShaderResource | TexCreate_UAV | TexCreate_RenderTargetable)
+// 			.SetNumMips(1);
+// 		FTexture2DRHIRef OutputTexture = RHICreateTexture(Desc)->GetTexture2D();
+// 		FUnorderedAccessViewRHIRef OutputTextureUAV = RHICmdList.CreateUnorderedAccessView(OutputTexture);
+// 		// 可选）创建 SRV（只读访问，适用于 Shader 中 Texture2D<> 输入）
+// 		FShaderResourceViewRHIRef OutputTextureSRV = RHICreateShaderResourceView(OutputTexture, 0);
+// 		
+// 		// 4. 调用 Dispatch
+// 		FAPCSParameters ShaderParameters;
+// 		ShaderParameters.NumKeyPoints = LocalDrawnPoints.Num();
+// 		// 由于 GPU Shader 一般使用 float 类型，Shader 参数结构体中也应使用 FVector3f
+// 		ShaderParameters.BoxExtent = FVector3f(BoxExtent);
+// 		ShaderParameters.KeyPositions = GPUKeyBuffer;
+// 		ShaderParameters.OutputTexture = OutputTextureUAV;
+// 		ShaderParameters.InputTexture = InputTextureSRV;
+// 		ShaderParameters.TextureWidth = Size.X;
+// 		ShaderParameters.TextureHeight = Size.Y;
+//
+// 		FAPCSManager::Dispatch(RHICmdList, ShaderParameters);
+// 		
+// 		// 读取 OutputTexture 的数据并传回 CPU
+// 	   FTextureUtils::ReadTextureToCPU(OutputTexture, [WeakThis, WeakMeshComponent](TArray<FColor>& PixelData, int32 Width, int32 Height)
+// 	   {
+// 		   // 在 GameThread 中执行
+// 		   AsyncTask(ENamedThreads::GameThread, [WeakThis, WeakMeshComponent, PixelData, Width, Height]()
+// 		   {
+// 			   if (!WeakThis.IsValid() || !WeakMeshComponent.IsValid()) return;
+//
+// 			   // 创建 Texture2D
+// 			   UTexture2D* Texture = FTextureUtils::CreateTexture2DFromRaw(PixelData, Width, Height);
+//
+// 			   // 应用到材质
+// 			   WeakThis->ApplyTextureToMaterial(WeakMeshComponent.Get(), Texture);
+// 		   	   //FString FilePath = FPaths::ProjectContentDir() + TEXT("Textures/OutputTexture.png");
+// 		   	   //FTextureUtils::SaveTextureToDisk(Texture,FilePath);
+// 		   });
+// 	   });
+//
+// 		//把生成结果存到类变量中即可
+// 		// 如何把生成的纹理应用回模型
+// 		//5. 可选：导出纹理
+// 		// FString FilePath = FPaths::ProjectContentDir() + TEXT("Textures/OutputTexture.png");
+// 		// SaveTextureToDisk(OutputTexture, FilePath);
+// 	});
+// }
 
 void UCanvasComponent::ModifyPointValue(const FVector& WorldLocation, float NewValue)
 {
@@ -681,5 +788,13 @@ void UCanvasComponent::LoadFromKeyPointData(const FKeyPointData& Data)
 	if (KeyPointVisualizer)
 	{
 		KeyPointVisualizer->UpdateAllVisualizers(DrawnPoints);
+	}
+}
+
+void UCanvasComponent::ExportTextureToDisk(const FString& FilePath)
+{
+	if (GeneratedIRTexture)
+	{
+		FTextureUtils::SaveTextureToDisk(GeneratedIRTexture, FilePath);
 	}
 }
