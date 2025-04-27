@@ -306,6 +306,8 @@ if (!RenderTargetRHI.IsValid())
 		   	   //FTextureUtils::SaveTextureToDisk(Texture,FilePath);
 		   });
 	   });
+
+		//把生成结果存到类变量中即可
 		// 如何把生成的纹理应用回模型
 		//5. 可选：导出纹理
 		// FString FilePath = FPaths::ProjectContentDir() + TEXT("Textures/OutputTexture.png");
