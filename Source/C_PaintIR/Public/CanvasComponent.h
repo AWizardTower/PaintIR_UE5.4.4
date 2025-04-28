@@ -6,6 +6,7 @@
 #include "Components/SceneComponent.h"
 #include "TemperatureDrawingComponent.h"
 #include "CustomDrawingComponent.h"
+#include "GlobalSettingsManager.h"
 #include "KeyPointData.h"
 #include "PointVisualizerComponent.h"
 #include "Engine/SceneCapture2D.h"
@@ -13,32 +14,32 @@
 #include "CanvasComponent.generated.h"  // 这一句必须在最后一行
 
 //创建一个专门的参数结构 FCanvasRenderSettings，在多个类中作为成员使用或传递
-USTRUCT(BlueprintType)
-struct FCanvasComponentSettings
-{
-	GENERATED_BODY()
-
-	// RenderTarget 尺寸
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	int32 TextureLength = 256;
-
-	// 展开尺寸 应该用不着严丝合缝 还真不行，不把纹理贴满就不满足UV映射
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	int32 UnwrapScale = 256;
-
-	// 正交相机捕获范围
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	int32 OrthoWidth = 256;
-
-	// 当前属性值最小范围
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	int32 minVal = 0;
-
-	// 当前属性值最大范围
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
-	int32 maxVal = 100;
-	
-};
+// USTRUCT(BlueprintType)
+// struct FCanvasComponentSettings
+// {
+// 	GENERATED_BODY()
+//
+// 	// RenderTarget 尺寸
+// 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
+// 	int32 TextureLength = 256;
+//
+// 	// 展开尺寸 应该用不着严丝合缝 还真不行，不把纹理贴满就不满足UV映射
+// 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
+// 	int32 UnwrapScale = 256;
+//
+// 	// 正交相机捕获范围
+// 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
+// 	int32 OrthoWidth = 256;
+//
+// 	// 当前属性值最小范围
+// 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
+// 	int32 minVal = 0;
+//
+// 	// 当前属性值最大范围
+// 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Canvas Settings")
+// 	int32 maxVal = 100;
+// 	
+// };
 
 UENUM(BlueprintType)
 enum class ECanvasDrawMode : uint8
@@ -105,7 +106,15 @@ public:
 
 	UPROPERTY()
 	UStaticMeshComponent* MeshComponent;
+	
+	void ApplyTextureSize();
+
 private:
+	UFUNCTION()
+	void OnGlobalSettingsChanged();
+	
+	UPROPERTY()
+	UGlobalSettingsManager* GlobalSettingsManager;  // 保存对设置管理器的引用
 	//换上展开材质
 	TArray<UMaterialInterface*> ApplyUnwrapMaterial();
 	//展开捕获换回的整个流程
@@ -133,8 +142,8 @@ private:
 	UPROPERTY()
 	UTextureRenderTarget2D* RenderTarget = nullptr;
 
-	UPROPERTY()
-	FCanvasComponentSettings Settings;
+	//UPROPERTY()
+	//FCanvasComponentSettings Settings;
 
 	// CanvasComponent.h
 	UPROPERTY()

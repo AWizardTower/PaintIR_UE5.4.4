@@ -4,7 +4,9 @@
 #include "CanvasComponent.h"
 
 #include "CanvasSaveManager.h"
+#include "GlobalSettingsManager.h"
 #include "ImageUtils.h"
+#include "MyGameInstance.h"
 #include "PointSaveGame.h"
 #include "Engine/Texture2D.h"
 #include "TextureUtils.h"
@@ -20,7 +22,14 @@
 // Sets default values for this component's properties
 UCanvasComponent::UCanvasComponent()
 {
-
+	// 使用 GlobalSettingsManager 获取设置
+	if (GlobalSettingsManager)
+	{
+		ETextureSize CurrentSize = GlobalSettingsManager->GetTextureSize();
+		FValueRange Range = GlobalSettingsManager->GetTextureSizeRange();
+        
+		// 根据获取的设置进行相关处理
+	}
 	// 创建子组件并附加
 	KeyPointVisualizer = CreateDefaultSubobject<UPointVisualizerComponent>(TEXT("KeyPointVisualizer"));
 	KeyPointVisualizer->SetupAttachment(this);
@@ -120,8 +129,20 @@ void UCanvasComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	KeyPointVisualizer->OwningCanvas = this;
+
+	// 从 GameInstance 获取全局设置管理器
+	GlobalSettingsManager = Cast<UMyGameInstance>(GetWorld()->GetGameInstance())->GetGlobalSettingsManager();
+	if (GlobalSettingsManager)
+	{
+		GlobalSettingsManager->OnTexureSizeChanged.AddDynamic(this, &UCanvasComponent::OnGlobalSettingsChanged);
+	}
 }
 
+void UCanvasComponent::OnGlobalSettingsChanged()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Global settings changed! Refreshing RenderTarget..."));
+	ApplyTextureSize();
+}
 
 // Called every frame
 void UCanvasComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -133,15 +154,16 @@ void UCanvasComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UCanvasComponent::InitializeForMesh()
 {
+	int32 TextureSize = GlobalSettingsManager->GetTextureSizeValue();
 	if (!MeshComponent) return;
 	UE_LOG(LogTemp, Log, TEXT("初始化了组件"));
 	RenderTarget = NewObject<UTextureRenderTarget2D>(this);
-	RenderTarget->InitAutoFormat(Settings.TextureLength, Settings.TextureLength);
+	RenderTarget->InitAutoFormat(TextureSize, TextureSize);
 	RenderTarget->ClearColor = FLinearColor::Black;
 	RenderTarget->UpdateResourceImmediate();
 	
 	SceneCapture->TextureTarget = RTDisplayIR;
-	SceneCapture->OrthoWidth = Settings.OrthoWidth; 
+	SceneCapture->OrthoWidth = TextureSize; 
 
 	const FBoxSphereBounds MyBounds = MeshComponent->Bounds;
 	// 获取物体包围盒的大小
@@ -156,7 +178,7 @@ void UCanvasComponent::InitializeForMesh()
 	
 	// 把包围盒中心位置作为展开位置不行，和相机捕捉中心对不上
 	// 注意名称要对，没有该名称的参数也不会报错，较难排除错误
-	UnwrapMaterial->SetScalarParameterValue(FName("UnwrapScale"), Settings.UnwrapScale);
+	UnwrapMaterial->SetScalarParameterValue(FName("UnwrapScale"), TextureSize);
 	UnwrapMaterial->SetVectorParameterValue(FName("UnwrapLocation"), UnwrapLocation);
 	UnwrapMaterial->SetVectorParameterValue(FName("ObjectPosition"), ObjectLocation);
 	UnwrapMaterial->SetVectorParameterValue(FName("ObjectBounds"), BoxExtent);
@@ -166,7 +188,7 @@ void UCanvasComponent::InitializeForMesh()
 	{
 		FBoxSphereBounds MeshBounds = PlaneMesh->GetBounds();
 		FVector PlaneMeshSize = MeshBounds.BoxExtent * 2.0f; // 得到原始尺寸（长宽高）
-		BackgroundPlane->SetRelativeScale3D(FVector(Settings.UnwrapScale/PlaneMeshSize.X, Settings.UnwrapScale/PlaneMeshSize.Y, 1.0f)); // 适当放大
+		BackgroundPlane->SetRelativeScale3D(FVector(TextureSize/PlaneMeshSize.X, TextureSize/PlaneMeshSize.Y, 1.0f)); // 适当放大
 		// PlaneMeshSize.X 就是平面长度
 		// PlaneMeshSize.Y 就是平面宽度
 	}
@@ -180,6 +202,55 @@ void UCanvasComponent::InitializeForMesh()
 	// CaptureWithUnwrapAndRestore();
 	//如果不再每次展开了，就不能更新纹理了，显然对于每一个画布都需要单独的rendertarget实例了
 }
+
+void UCanvasComponent::ApplyTextureSize()
+{
+	int32 TextureSize = GlobalSettingsManager->GetTextureSizeValue();
+	if (!RenderTarget) return;
+    
+	// 更新RenderTarget尺寸
+	RenderTarget->InitAutoFormat(TextureSize, TextureSize);
+    
+	// 更新SceneCapture正交相机宽度
+	if (SceneCapture)
+	{
+		SceneCapture->OrthoWidth = TextureSize;
+	}
+    
+	// 更新Unwrap材质参数
+	if (UnwrapMaterial)
+	{
+		// FVector UnwrapLocation = GetComponentLocation() + FVector(0.0f, 0.0f, 2.0f);
+		// FVector ObjectLocation = MeshComponent->GetComponentLocation();
+		// FVector BoxExtent = MeshComponent->Bounds.BoxExtent * 2;
+
+		UnwrapMaterial->SetScalarParameterValue(FName("UnwrapScale"), TextureSize);
+		// UnwrapMaterial->SetVectorParameterValue(FName("UnwrapLocation"), UnwrapLocation);
+		// UnwrapMaterial->SetVectorParameterValue(FName("ObjectPosition"), ObjectLocation);
+		// UnwrapMaterial->SetVectorParameterValue(FName("ObjectBounds"), BoxExtent);
+	}
+
+	// 更新背景Plane缩放
+	if (BackgroundPlane)
+	{
+		UStaticMesh* PlaneMesh = BackgroundPlane->GetStaticMesh();
+		if (PlaneMesh)
+		{
+			FBoxSphereBounds MeshBounds = PlaneMesh->GetBounds();
+			FVector PlaneMeshSize = MeshBounds.BoxExtent * 2.0f;
+			if (!PlaneMeshSize.IsNearlyZero())
+			{
+				BackgroundPlane->SetRelativeScale3D(
+					FVector(TextureSize / PlaneMeshSize.X, TextureSize / PlaneMeshSize.Y, 1.0f)
+				);
+			}
+		}
+	}
+    
+	// 清空一下渲染目标，防止脏数据
+	UKismetRenderingLibrary::ClearRenderTarget2D(this, RenderTarget, FLinearColor::Black);
+}
+
 
 void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value)
 {
@@ -217,7 +288,7 @@ void UCanvasComponent::GenerateTextureFromDrawnPoints()
 
     // 2. 捕获场景
     SceneCapture->CaptureScene();
-
+	
     // 3. 开始生成纹理
     UTextureRenderTarget2D* LocalRenderTarget = RTDisplayIR;
     TMap<FVector, float> LocalDrawnPoints = DrawnPoints;

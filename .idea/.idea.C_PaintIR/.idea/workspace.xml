@@ -14,12 +14,14 @@
   <component name="ChangeListManager">
     <list default="true" id="da4f7d27-5d98-412f-a99f-7fc48c5c0cb3" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.C_PaintIR/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.C_PaintIR/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/C_PaintIR.sln.DotSettings.user" beforeDir="false" afterPath="$PROJECT_DIR$/C_PaintIR.sln.DotSettings.user" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Textures/WZ551轮式装甲车.png" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Textures/WZ551轮式装甲车.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Textures/WZ551轮式装甲车.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Textures/WZ551轮式装甲车.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/UI/UMG_Main.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/UI/UMG_Main.uasset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Private/CanvasComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Private/CanvasComponent.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Private/MeshManager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Private/MeshManager.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Private/MyPlayerController.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Private/MyPlayerController.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Private/MyStaticMeshActor.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Private/MyStaticMeshActor.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Private/MyGameInstance.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Private/MyGameInstance.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Public/CanvasComponent.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Public/CanvasComponent.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Source/C_PaintIR/Public/MyGameInstance.h" beforeDir="false" afterPath="$PROJECT_DIR$/Source/C_PaintIR/Public/MyGameInstance.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,6 +60,7 @@
     <setting file="file://$PROJECT_DIR$/../../Epic Games/UE_5.4/Engine/Source/Runtime/CoreUObject/Public/UObject/Object.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../Epic Games/UE_5.4/Engine/Source/Runtime/D3D12RHI/Private/D3D12Adapter.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../Epic Games/UE_5.4/Engine/Source/Runtime/Engine/Public/ISMPartition/ISMPartitionActor.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../Epic Games/UE_5.4/Engine/Source/Runtime/Engine/Public/Subsystems/SubsystemCollection.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../Epic Games/UE_5.4/Engine/Source/Runtime/RHI/Public/RHIResources.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../Epic Games/UE_5.4/Engine/Source/Runtime/RenderCore/Public/ShaderParameterStructDeclaration.h" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../Epic Games/UE_5.4/Engine/Source/Runtime/Renderer/Private/RectLightTextureManager.cpp" root0="FORCE_HIGHLIGHTING" />
@@ -282,7 +285,10 @@
       <workItem from="1745722461296" duration="2415000" />
       <workItem from="1745728622877" duration="3206000" />
       <workItem from="1745732102876" duration="3357000" />
-      <workItem from="1745746962197" duration="3004000" />
+      <workItem from="1745746962197" duration="9017000" />
+      <workItem from="1745762008641" duration="2803000" />
+      <workItem from="1745769525553" duration="749000" />
+      <workItem from="1745807532237" duration="4213000" />
     </task>
     <servers />
   </component>
@@ -314,6 +320,11 @@
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/Source/C_PaintIR/Private/TextureUtils.cpp</url>
           <option name="timeStamp" value="10" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/Source/C_PaintIR/Public/GlobalSettingsManager.h</url>
+          <line>4</line>
+          <option name="timeStamp" value="11" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
