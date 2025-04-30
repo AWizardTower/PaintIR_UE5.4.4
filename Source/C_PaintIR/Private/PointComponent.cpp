@@ -38,8 +38,12 @@ UPointComponent::UPointComponent()
 	// 创建 UMG 组件
 	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("WidgetComponent"));
 	WidgetComponent->SetupAttachment(this);  // 让 UMG 组件依附于当前组件
-	WidgetComponent->SetRelativeLocation(FVector(0, 0, 30)); // 比球体略高一点
+	WidgetComponent->SetRelativeLocation(FVector(0, 0, 0)); // 没用
 	WidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	WidgetComponent->SetInitialLayerZOrder(999);
+	// 设置Widget绘制大小，比如设成宽300，高200
+	// 只改变了绘制盒子的大小，视觉观感上好像改变了相对位置
+	WidgetComponent->SetDrawSize(FVector2D(500.0f, 500.0f));
 
 	if (KeyPointWidgetClass)
 	{

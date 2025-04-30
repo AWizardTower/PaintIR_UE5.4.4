@@ -13,7 +13,38 @@
 
 UMeshManager::UMeshManager()
 {
-	
+	// 加载材质资产
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> IRMaterialAsset(TEXT("Material'/Game/Materials/M_BaseColor.M_BaseColor'"));
+	if (IRMaterialAsset.Succeeded())
+	{
+		BaseMaterial = UMaterialInstanceDynamic::Create(IRMaterialAsset.Object, this);
+	}
+}
+
+// 显示当前模型，隐藏其他模型
+void UMeshManager::ShowCurrentActorOnly()
+{
+	for (AMyStaticMeshActor* Actor : Actors)
+	{
+		if (Actor)
+		{
+			// 如果是当前模型，显示；否则，隐藏
+			Actor->SetActorHiddenInGame(Actor != GetCurrentActor());
+		}
+	}
+}
+
+// 显示所有模型
+void UMeshManager::ShowAllActors()
+{
+	for (AMyStaticMeshActor* Actor : Actors)
+	{
+		if (Actor)
+		{
+			// 显示所有模型
+			Actor->SetActorHiddenInGame(false);
+		}
+	}
 }
 
 void UMeshManager::LoadMeshes(const FString& AssetPath)
@@ -30,7 +61,7 @@ void UMeshManager::LoadMeshes(const FString& AssetPath)
 	
 	// 定义初始位置和间距
 	FVector StartLocation = FVector(0.f, 1000.f, 0.f);
-	float OffsetX = 2000.f; // 每个 Actor 在 X 轴上的间距
+	float OffsetX = 5000.f; // 每个 Actor 在 X 轴上的间距
 
 	int32 Index = 0;
 	for (const FAssetData& AssetData : AssetDataList)
@@ -98,6 +129,8 @@ void UMeshManager::LoadMeshes(const FString& AssetPath)
 			}
 		}
 	}
+	ShowCurrentActorOnly();
+	SetMaterialForAllActors(BaseMaterial);
 }
 
 int32 UMeshManager::GetMeshCount() const
@@ -119,6 +152,7 @@ AMyStaticMeshActor* UMeshManager::NextActor()
 	if (Actors.Num() == 0) return nullptr;
 
 	CurrentActorIndex = (CurrentActorIndex + 1) % Actors.Num();
+	ShowCurrentActorOnly();
 	return Cast<AMyStaticMeshActor>(Actors[CurrentActorIndex]);
 }
 
@@ -127,6 +161,7 @@ AMyStaticMeshActor* UMeshManager::PreviousActor()
 	if (Actors.Num() == 0) return nullptr;
 
 	CurrentActorIndex = (CurrentActorIndex - 1 + Actors.Num()) % Actors.Num();
+	ShowCurrentActorOnly();
 	return Cast<AMyStaticMeshActor>(Actors[CurrentActorIndex]);
 }
 
@@ -148,6 +183,7 @@ AMyStaticMeshActor* UMeshManager::FindActorByIndex(int32 Index)
 	{
 		//同样改变了当前actor
 		CurrentActorIndex = Index;
+		ShowCurrentActorOnly();
 		return Actors[Index];
 	}
 	return nullptr;
@@ -296,5 +332,27 @@ void UMeshManager::ExportAllCanvasTextures()
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("保存所有纹理！"));
+	}
+}
+
+void UMeshManager::SetMaterialForAllActors(UMaterialInterface* NewMaterial)
+{
+
+	if (!NewMaterial)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SetMaterialForAllActors: NewMaterial is null."));
+		return;
+	}
+
+	for (AMyStaticMeshActor* Actor : Actors)
+	{
+		if (Actor && Actor->GetStaticMeshComponent())
+		{
+			int32 MaterialCount = Actor->GetStaticMeshComponent()->GetNumMaterials();
+			for (int32 i = 0; i < MaterialCount; ++i)
+			{
+				Actor->GetStaticMeshComponent()->SetMaterial(i, NewMaterial);
+			}
+		}
 	}
 }

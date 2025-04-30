@@ -58,7 +58,7 @@ UCanvasComponent::UCanvasComponent()
 		SceneCapture->bCaptureEveryFrame = false;
 		SceneCapture->bCaptureOnMovement = false;
 		
-		FVector Location(0.0f, 0.0f, 1000.0f);
+		FVector Location(0.0f, 0.0f, 2.0f);
 		// 因为是RelativeTransform，居然这才是向下看
 		// 笑死了，摄像机还必须把纹理的朝向拍对
 		FRotator Rotation(-90.0f, 0.0f, -90.0f);  
@@ -162,7 +162,7 @@ void UCanvasComponent::InitializeForMesh()
 	RenderTarget->ClearColor = FLinearColor::Black;
 	RenderTarget->UpdateResourceImmediate();
 	
-	SceneCapture->TextureTarget = RTDisplayIR;
+	SceneCapture->TextureTarget = RenderTarget;
 	SceneCapture->OrthoWidth = TextureSize; 
 
 	const FBoxSphereBounds MyBounds = MeshComponent->Bounds;
@@ -290,11 +290,18 @@ void UCanvasComponent::GenerateTextureFromDrawnPoints()
     SceneCapture->CaptureScene();
 	
     // 3. 开始生成纹理
-    UTextureRenderTarget2D* LocalRenderTarget = RTDisplayIR;
+    UTextureRenderTarget2D* LocalRenderTarget = RenderTarget;
     TMap<FVector, float> LocalDrawnPoints = DrawnPoints;
     FVector BoxExtent = MeshComponent->Bounds.BoxExtent * 2;
 
     FIntPoint Size(LocalRenderTarget->SizeX, LocalRenderTarget->SizeY);
+	
+	// 打印生成纹理的大小
+	if (GeneratedIRTexture)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Generated Texture Size: Width = %d, Height = %d"), LocalRenderTarget->SizeX, LocalRenderTarget->SizeY);
+	}
+	
     FTextureRenderTargetResource* RenderTargetResource = LocalRenderTarget->GameThread_GetRenderTargetResource();
 
     TWeakObjectPtr<UCanvasComponent> WeakThis(this);
@@ -359,6 +366,7 @@ void UCanvasComponent::GenerateTextureFromDrawnPoints()
 
                     GeneratedIRTexture = FTextureUtils::CreateTexture2DFromRaw(PixelData, Width, Height);
                     WeakThis->ApplyTextureToMaterial(GeneratedIRTexture);
+                	
                 });
             });
         }

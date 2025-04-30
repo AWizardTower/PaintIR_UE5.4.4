@@ -21,6 +21,14 @@ class C_PAINTIR_API UMeshManager : public UObject
 public:
 	// 构造函数
 	UMeshManager();
+	
+	// 显示当前模型，隐藏其他模型
+	UFUNCTION(BlueprintCallable, Category = "MeshManager")
+	void ShowCurrentActorOnly();
+
+	// 显示所有模型
+	UFUNCTION(BlueprintCallable, Category = "MeshManager")
+	void ShowAllActors();
 
 	// 委托：通知外部加载完成
 	UPROPERTY(BlueprintAssignable, Category = "MeshManager")
@@ -65,8 +73,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "MeshManager")
 	void ExportAllCanvasTextures();
-private:
 
+	// 更换所有Actor的材质
+	UFUNCTION(BlueprintCallable, Category = "MeshManager")
+	void SetMaterialForAllActors(UMaterialInterface* NewMaterial);
+private:
 	// 存储加载的静态网格体
 	UPROPERTY()
 	TArray<UStaticMesh*> StaticMeshes;
@@ -77,4 +88,7 @@ private:
 	// 示例：在您的类的头文件中
 	UPROPERTY()
 	TArray<AMyStaticMeshActor*> Actors;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* BaseMaterial;
 };

@@ -58,11 +58,14 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
     float totalWeight = 0.0;
     float valueSum = 0.0;
     float epsilon = 1e-3;
+	float Sigma = 1; // 控制平滑程度，可以调试
 
     for (int i = 0; i < NumKeyPoints; ++i)
     {
         float dist = distance(WorldPos, KeyPositions[i].xyz);
-        float weight = 1.0 / max(dist, epsilon); // 防止除 0
+    	//float weight = exp(- (dist * dist) / (2.0 * Sigma * Sigma)); // 高斯权重
+    	float Power = 2.0;
+    	float weight = 1.0 / pow(max(dist, epsilon), Power);
 
         valueSum += weight * KeyPositions[i].w;
         totalWeight += weight;
