@@ -129,7 +129,7 @@ void UMeshManager::LoadMeshes(const FString& AssetPath)
 			}
 		}
 	}
-	ShowCurrentActorOnly();
+	// ShowCurrentActorOnly();
 	SetMaterialForAllActors(BaseMaterial);
 }
 
@@ -152,7 +152,7 @@ AMyStaticMeshActor* UMeshManager::NextActor()
 	if (Actors.Num() == 0) return nullptr;
 
 	CurrentActorIndex = (CurrentActorIndex + 1) % Actors.Num();
-	ShowCurrentActorOnly();
+	//ShowCurrentActorOnly();
 	return Cast<AMyStaticMeshActor>(Actors[CurrentActorIndex]);
 }
 
@@ -161,7 +161,7 @@ AMyStaticMeshActor* UMeshManager::PreviousActor()
 	if (Actors.Num() == 0) return nullptr;
 
 	CurrentActorIndex = (CurrentActorIndex - 1 + Actors.Num()) % Actors.Num();
-	ShowCurrentActorOnly();
+	//ShowCurrentActorOnly();
 	return Cast<AMyStaticMeshActor>(Actors[CurrentActorIndex]);
 }
 
@@ -183,7 +183,7 @@ AMyStaticMeshActor* UMeshManager::FindActorByIndex(int32 Index)
 	{
 		//同样改变了当前actor
 		CurrentActorIndex = Index;
-		ShowCurrentActorOnly();
+		//ShowCurrentActorOnly();
 		return Actors[Index];
 	}
 	return nullptr;
@@ -237,7 +237,7 @@ void UMeshManager::CollectAllCanvasData()
 
 	if (GEngine)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("绘制数据保存成功！"));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("绘制数据保存成功！"));
 	}
 }
 
@@ -284,29 +284,37 @@ void UMeshManager::RestoreAllCanvasData()
 
 	if (GEngine)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("绘制数据加载完成！"));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("绘制数据加载完成！"));
 	}
 }
 
-void UMeshManager::ExportCurrentCanvasTexture()
+FString UMeshManager::ExportCurrentCanvasTexture()
 {
 	FString DirectoryPath = FPaths::ProjectContentDir() + TEXT("Textures");
 	AMyStaticMeshActor* CurrentActor = GetCurrentActor();
-	if (CurrentActor)
+
+	if (!CurrentActor)
 	{
-		UCanvasComponent* CanvasComp = CurrentActor->FindComponentByClass<UCanvasComponent>();
-		if (CanvasComp)
-		{
-			FString FileName = FString::Printf(TEXT("%s/%s.png"), *DirectoryPath, *CurrentActor->GetMeshName());
-			CanvasComp->ExportTextureToDisk(FileName);
+		return TEXT("导出失败：未找到当前模型！");
+	}
 
-			UE_LOG(LogTemp, Log, TEXT("导出当前纹理：%s"), *FileName);
+	UCanvasComponent* CanvasComp = CurrentActor->FindComponentByClass<UCanvasComponent>();
+	if (!CanvasComp)
+	{
+		return FString::Printf(TEXT("导出失败：模型 %s 上未找到 CanvasComponent！"), *CurrentActor->GetName());
+	}
 
-			if (GEngine)
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("保存当前纹理！"));
-			}
-		}
+	FString FileName = FString::Printf(TEXT("%s/%s.png"), *DirectoryPath, *CurrentActor->GetMeshName());
+	bool bSuccess = CanvasComp->ExportTextureToDisk(FileName);
+
+	if (bSuccess)
+	{
+		UE_LOG(LogTemp, Log, TEXT("导出当前纹理：%s"), *FileName);
+		return FString::Printf(TEXT("保存成功：%s"), *FileName);
+	}
+	else
+	{
+		return FString::Printf(TEXT("导出失败：无法保存纹理到 %s"), *FileName);
 	}
 }
 
@@ -331,7 +339,7 @@ void UMeshManager::ExportAllCanvasTextures()
 
 	if (GEngine)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("保存所有纹理！"));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("保存所有纹理！"));
 	}
 }
 

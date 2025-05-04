@@ -1,0 +1,23 @@
+﻿// StructuredBuffer<BrushStroke> BrushBuffer;
+// RWTexture2D<float4> OutTexture;
+//
+// [numthreads(8, 8, 1)]
+// void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
+// {
+// 	int2 coord = dispatchThreadId.xy;
+// 	float4 finalColor = float4(0, 0, 0, 0);
+//
+// 	for (int i = 0; i < BrushCount; ++i)
+// 	{
+// 		BrushStroke stroke = BrushBuffer[i];
+// 		float3 worldPos = WorldPosMap[coord]; // 或者其他映射方式
+// 		float dist = distance(worldPos, stroke.WorldPosition);
+// 		float falloff = saturate(1 - dist / stroke.Radius);
+// 		float4 brushCol = float4(stroke.Color.rgb, stroke.Strength * falloff);
+//
+// 		// Alpha blend
+// 		finalColor.rgb = lerp(finalColor.rgb, brushCol.rgb, brushCol.a);
+// 	}
+//
+// 	OutTexture[coord] = finalColor;
+// }

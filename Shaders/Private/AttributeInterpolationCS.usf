@@ -30,6 +30,10 @@ StructuredBuffer<float4> KeyPositions : register(t1); // xyz = 位置, w = 值
 // StructuredBuffer<float2> VertexUVs : register(t1);
 RWTexture2D<float4> OutputTexture : register(u0);
 
+// 控制渐变的参数
+float BrushStrength = 1.0;  // 笔刷强度
+float MaxBrushDistance = 1.0; // 最大影响距离，定义渐变范围
+
 [numthreads(8, 8, 1)]
 void MainCS(uint3 DTid : SV_DispatchThreadID)
 {
@@ -37,59 +41,39 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 	uint2 uv = DTid.xy;
 	// 从输入纹理中读取归一化坐标，反归一化回世界坐标
 	float4 encoded = InputTexture.Load(int3(uv, 0));
-    float3 WorldPos = (encoded.rgb - 0.5) * BoxExtent;
-	// ⭐ 判断是否为纯黑背景（认为黑背景为无效像素）
-    if (all(encoded.rgb == float3(0, 0, 0)))
-    {
-        OutputTexture[uv] = float4(0, 0, 0, 1); // 或者不写入（保持原值），看你需求
-        return;
-    }
-	// 遍历判断是否为关键点（精确匹配），关键点返回原值
-    for (int i = 0; i < NumKeyPoints; ++i)
-    {
-		// 1e-4
-        if (all(abs(WorldPos - KeyPositions[i].xyz) < 1e-4))
-        {
-            OutputTexture[uv] = float4(KeyPositions[i].w.xxx/100, 1);
-            return;
-        }
-    }
-	// IDW 插值
-    float totalWeight = 0.0;
-    float valueSum = 0.0;
-    float epsilon = 1e-3;
-	float Sigma = 1; // 控制平滑程度，可以调试
+	float3 WorldPos = (encoded.rgb - 0.5) * BoxExtent;
 
-    for (int i = 0; i < NumKeyPoints; ++i)
-    {
-        float dist = distance(WorldPos, KeyPositions[i].xyz);
-    	//float weight = exp(- (dist * dist) / (2.0 * Sigma * Sigma)); // 高斯权重
-    	float Power = 2.0;
-    	float weight = 1.0 / pow(max(dist, epsilon), Power);
+	// 判断是否为纯黑背景（认为黑背景为无效像素）
+	if (all(encoded.rgb == float3(0, 0, 0)))
+	{
+		OutputTexture[uv] = float4(1, 1, 1, 0); // 或者不写入（保持原值），看你需求
+		return;
+	}
 
-        valueSum += weight * KeyPositions[i].w;
-        totalWeight += weight;
-    }
+	// 初始化渐变目标颜色（比如可以是一个固定的目标颜色，或者根据情况动态设置）
+	float3 targetColor = float3(1, 1, 1);  // 目标颜色是红色
+	float3 baseColor = float3(0, 0, 0);
 
-    float interpolatedValue = totalWeight > 0 ? (valueSum / totalWeight) : 0.0;
-	// 将插值结果写入输出纹理
-	OutputTexture[uv] = float4(interpolatedValue.xxx/100, 1);
-	// uint index = DispatchThreadID.x + DispatchThreadID.y * TextureWidth; 
-	//
-	// if (index < VertexCount)
-	// {
-	// 	float3 position = VertexPositions[index];
-	// 	float2 uv = VertexUVs[index];
-	// 	// 映射坐标为 [0, 1] 区间
-	// 	float3 normalizedPos = (position - MinBound) / (MaxBound - MinBound);
-	// 	normalizedPos = saturate(normalizedPos); // 保守保险做一手截断
-	// 	// 使用归一化的位置作为颜色
-	// 	// float4 color = float4(normalizedPos, 1.0);
-	// 	float4 color = float4(0.0, 0.0, 1.0, 1.0);
-	//
-	// 	// 将颜色写入纹理的对应UV位置
-	// 	uint2 texelCoord = uint2(clamp(uv * float2(TextureWidth, TextureHeight), float2(0.0f, 0.0f), float2(TextureWidth - 1, TextureHeight - 1)));
-	//
-	// 	OutputTexture[texelCoord] = color;
-	// }
+	// 遍历关键点，判断哪些像素应该应用渐变
+	for (int i = 0; i < NumKeyPoints; ++i)
+	{
+		// 判断当前像素是否在关键点的影响范围内
+		float dist = distance(WorldPos, KeyPositions[i].xyz);
+        
+		if (dist < 10.0)  // 设定影响范围的半径
+		{
+			// 计算渐变比例，根据距离插值
+			float weight = saturate(1.0 - dist / 10.0);  // 范围[0, 1]的渐变
+
+			// 使用渐变比例平滑过渡到目标颜色
+			float3 newColor = lerp(baseColor, targetColor, weight);
+
+			// 写入渐变后的颜色
+			OutputTexture[uv] = float4(newColor, 1.0);
+			return;
+		}
+	}
+
+	// 如果不在关键点影响范围内，则保持原始颜色
+	OutputTexture[uv] = encoded;
 }

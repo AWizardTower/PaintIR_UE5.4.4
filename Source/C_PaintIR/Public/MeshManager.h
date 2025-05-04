@@ -69,7 +69,7 @@ public:
 	void RestoreAllCanvasData();
 
 	UFUNCTION(BlueprintCallable, Category = "MeshManager")
-	void ExportCurrentCanvasTexture();
+	FString ExportCurrentCanvasTexture();
 
 	UFUNCTION(BlueprintCallable, Category = "MeshManager")
 	void ExportAllCanvasTextures();

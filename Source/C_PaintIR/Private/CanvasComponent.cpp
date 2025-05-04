@@ -882,10 +882,18 @@ void UCanvasComponent::LoadFromKeyPointData(const FKeyPointData& Data)
 	GenerateTextureFromDrawnPoints();
 }
 
-void UCanvasComponent::ExportTextureToDisk(const FString& FilePath)
+bool UCanvasComponent::ExportTextureToDisk(const FString& FilePath)
 {
-	if (GeneratedIRTexture)
+	if (!GeneratedIRTexture)
 	{
-		FTextureUtils::SaveTextureToDisk(GeneratedIRTexture, FilePath);
+		UE_LOG(LogTemp, Warning, TEXT("ExportTextureToDisk: GeneratedIRTexture is null"));
+		return false;
 	}
+
+	bool bSaved = FTextureUtils::SaveTextureToDisk(GeneratedIRTexture, FilePath);
+	if (!bSaved)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ExportTextureToDisk: Failed to save texture to %s"), *FilePath);
+	}
+	return bSaved;
 }

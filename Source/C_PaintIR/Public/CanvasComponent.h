@@ -13,6 +13,18 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "CanvasComponent.generated.h"  // 这一句必须在最后一行
 
+USTRUCT()
+struct FBrushStroke
+{
+	GENERATED_BODY()
+
+	FVector WorldPosition;       // 笔刷中心
+	float Radius;                // 大小
+	FLinearColor Color;          // 颜色
+	float Hardness;              // 可选：边缘柔和度
+	float Strength;              // 叠加强度
+};
+
 //创建一个专门的参数结构 FCanvasRenderSettings，在多个类中作为成员使用或传递
 // USTRUCT(BlueprintType)
 // struct FCanvasComponentSettings
@@ -99,7 +111,7 @@ public:
 
 	TMap<FVector, float> DrawnPoints; // 存储已绘制点的位置和对应的值
 
-	void ExportTextureToDisk(const FString& FilePath);
+	bool ExportTextureToDisk(const FString& FilePath);
 
 	UPROPERTY(BlueprintReadWrite, Category = "Generated IR Texture")
 	UTexture2D* GeneratedIRTexture = nullptr;
@@ -155,4 +167,7 @@ private:
 	// CanvasComponent.h 中加：
 	UPROPERTY()
 	UPointVisualizerComponent* KeyPointVisualizer;
+
+	UPROPERTY()
+	TArray<FBrushStroke> BrushHistory;
 };
