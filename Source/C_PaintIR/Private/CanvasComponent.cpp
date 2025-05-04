@@ -92,6 +92,13 @@ UCanvasComponent::UCanvasComponent()
 		RTDisplayIR = RTAsset.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<UTextureRenderTarget2D> RenderTargetObj(TEXT("TextureRenderTarget2D'/Game/Dilation/RT_Dilated.RT_Dilated'")); // 路径注意要写对
+	if (RenderTargetObj.Succeeded())
+	{
+		DefaultRenderTarget = RenderTargetObj.Object;
+	}
+	
+
 	// 创建一个黑色背景平面
 	BackgroundPlane = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BackgroundPlane"));
 	if (BackgroundPlane)
@@ -256,7 +263,10 @@ void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value)
 {
 	const FBoxSphereBounds MyBounds = MeshComponent->Bounds;
 	FVector BoxExtent = MyBounds.BoxExtent * 2;
-	FVector LocalLocation = GetComponentTransform().InverseTransformPosition(WorldLocation);
+	//FVector LocalLocation = GetComponentTransform().InverseTransformPosition(WorldLocation);
+	FVector LocalPointLocation = GetComponentTransform().InverseTransformPosition(WorldLocation);
+	FVector LocalBoxCenter = GetComponentTransform().InverseTransformPosition(MyBounds.Origin);
+	FVector LocalLocation = (LocalPointLocation - LocalBoxCenter);
 
 	UE_LOG(LogTemp, Log, TEXT("Clicked at local position: %s, and current value is :%f"), *LocalLocation.ToString(), Value);
 
@@ -265,7 +275,7 @@ void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value)
 	// 可视化关键点
 	if (KeyPointVisualizer)
 	{
-		KeyPointVisualizer->AddKeyPoint(LocalLocation, Value);
+		KeyPointVisualizer->AddKeyPoint(LocalPointLocation, Value);
 	}
 
 	// 然后直接刷新纹理
@@ -284,13 +294,13 @@ void UCanvasComponent::GenerateTextureFromDrawnPoints()
     if (!StaticMesh) return;
 
     // 1. 展开UV
-    ApplyUnwrapMaterial();
+    //ApplyUnwrapMaterial();
 
     // 2. 捕获场景
-    SceneCapture->CaptureScene();
+    //SceneCapture->CaptureScene();
 	
     // 3. 开始生成纹理
-    UTextureRenderTarget2D* LocalRenderTarget = RenderTarget;
+    UTextureRenderTarget2D* LocalRenderTarget = DefaultRenderTarget;
     TMap<FVector, float> LocalDrawnPoints = DrawnPoints;
     FVector BoxExtent = MeshComponent->Bounds.BoxExtent * 2;
 
@@ -519,9 +529,9 @@ void UCanvasComponent::ModifyPointValue(const FVector& WorldLocation, float NewV
 
 void UCanvasComponent::RemovePoint(const FVector& WorldLocation)
 {
-	if (DrawnPoints.Contains(WorldLocation))
+	if (DrawnPoints.Contains(WorldLocation-GetComponentTransform().InverseTransformPosition(MeshComponent->Bounds.Origin)))
 	{
-		DrawnPoints.Remove(WorldLocation);
+		DrawnPoints.Remove(WorldLocation-GetComponentTransform().InverseTransformPosition(MeshComponent->Bounds.Origin));
 		UE_LOG(LogTemp, Log, TEXT("删除了这个节点"));
 	}
 	

@@ -154,6 +154,10 @@ private:
 	UPROPERTY()
 	UTextureRenderTarget2D* RenderTarget = nullptr;
 
+	// 用于指定默认的 RenderTarget 资源
+	UPROPERTY()
+	UTextureRenderTarget2D* DefaultRenderTarget = nullptr;
+
 	//UPROPERTY()
 	//FCanvasComponentSettings Settings;
 
