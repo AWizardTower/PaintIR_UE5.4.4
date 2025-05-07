@@ -518,9 +518,9 @@ void UCanvasComponent::GenerateTextureFromDrawnPoints()
 
 void UCanvasComponent::ModifyPointValue(const FVector& WorldLocation, float NewValue)
 {
-	if (DrawnPoints.Contains(WorldLocation))
+	if (DrawnPoints.Contains(WorldLocation-GetComponentTransform().InverseTransformPosition(MeshComponent->Bounds.Origin)))
 	{
-		DrawnPoints[WorldLocation] = NewValue;
+		DrawnPoints[WorldLocation-GetComponentTransform().InverseTransformPosition(MeshComponent->Bounds.Origin)] = NewValue;
 		//UE_LOG(LogTemp, Log, TEXT("找到了这个节点"));
 	}
 

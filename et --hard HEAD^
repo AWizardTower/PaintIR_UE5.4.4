@@ -1,0 +1,155 @@
+[33mcommit a67f467dbdf0d30ad276738023892249e6158de3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Tue May 6 06:01:10 2025 +0800
+
+    backup
+
+[33mcommit 37251c61312ee9ea454da6d1cd5b47c3ca0940b7[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Sun May 4 21:01:37 2025 +0800
+
+    apply dilate texture
+
+[33mcommit b1b124cf216c1f451e89fff2b4adf11db7825490[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Sun May 4 18:31:10 2025 +0800
+
+    dilation
+
+[33mcommit bd2124dbf7131fb0f73d4b00dccf89c0cf297b42[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Wed Apr 30 18:33:36 2025 +0800
+
+    Renew UI
+
+[33mcommit b62008bdd05b527da82076e04397810d2706ae50[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Mon Apr 28 11:43:19 2025 +0800
+
+    Change Size
+
+[33mcommit 07ba6a5897e1f3d7c20c98c4f4d30373f6819d0b[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Sun Apr 27 20:08:22 2025 +0800
+
+    refresh display
+
+[33mcommit cf299a50761858b5a8ba94e16545507d1c238dab[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Sun Apr 27 13:31:28 2025 +0800
+
+    export texture
+
+[33mcommit 44252939c88070996ed014a11734576e8e7e76c0[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Sun Apr 27 10:57:49 2025 +0800
+
+    switch mode
+
+[33mcommit 8c57edd5cc695c220279c865b6b1faa9ab705fe0[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Sat Apr 26 17:18:31 2025 +0800
+
+    Save and Restore
+
+[33mcommit 9bf422bc8e105c25a18ca30e06b0674dc3286aac[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Fri Apr 25 17:59:28 2025 +0800
+
+    complete draw point
+
+[33mcommit 284d6c23eb41e61c0423426bf08d76036e2c9ab0[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Wed Apr 23 22:31:45 2025 +0800
+
+    point as struct
+
+[33mcommit 95cbd96adc769cb495377ed9e59b964ff5ba3904[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Wed Apr 23 13:30:41 2025 +0800
+
+    no solve rendertarget bug
+
+[33mcommit 48cdf83bea190b7947a40722be73db9ad99d9ac1[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Mon Apr 21 17:39:35 2025 +0800
+
+    backup
+
+[33mcommit 8ce79585b2a208e130b527f3474e85646ea28e28[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Sun Apr 20 21:46:31 2025 +0800
+
+    backup
+
+[33mcommit 29d270dad280c84ebc648f53a7124c42fe2b7c2f[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Fri Apr 18 21:12:52 2025 +0800
+
+    Unwarp and Capture
+
+[33mcommit 55ac278899a7c14f0c92f0fd1fc7cf9bc3a551bd[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Fri Apr 18 15:18:18 2025 +0800
+
+    back up a working version, but can't use rider
+
+[33mcommit 0d1ae3f3c4c8b8c1524296c7fa01063f0d3bd428[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Thu Apr 17 19:39:18 2025 +0800
+
+    complete MeshManager
+
+[33mcommit 8f547d1536a53b8bb6dae122f8f7181e4f8e5689[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Sat Apr 12 22:20:17 2025 +0800
+
+    a no bug edition
+
+[33mcommit 2e3190d3ca115cb62bf2cdbc6ab7e98384571531[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Fri Apr 11 23:17:16 2025 +0800
+
+    change value from UI
+
+[33mcommit 89b20f1d5639eb4085ccf4e2927a4115b447c757[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Fri Apr 11 21:21:36 2025 +0800
+
+    apply texture to mesh
+
+[33mcommit 3e5d1fccb2230d53c84f10b0120350539c2bc8d8[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Thu Apr 10 22:35:59 2025 +0800
+
+    Blank compute shader
+
+[33mcommit 0afaa0c866d4f0f8b7d33a7583f51e5341ee0ab3[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Thu Apr 10 14:30:40 2025 +0800
+
+    add virtual shaders mapping add linetrace
+
+[33mcommit d6991ca9ca211b848a684c5c0088b065de579e9c[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Wed Apr 9 22:42:20 2025 +0800
+
+    add blank canvas component
+
+[33mcommit 23936c54653a089f4c82e1eec24bd2e718ca5960[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Wed Apr 9 21:17:45 2025 +0800
+
+    lay meshes
+
+[33mcommit e5091ad94c215857dad008565230e38ff1bbbaed[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Tue Apr 8 14:39:39 2025 +0800
+
+    add new module using rider
+
+[33mcommit 93532bc4709ef91c0ff22b6bb41b1932c7d15dd9[m
+Author: AWizardTower <3346581198@qq.com>
+Date:   Thu Apr 3 15:19:22 2025 +0800
+
+    Blank Project

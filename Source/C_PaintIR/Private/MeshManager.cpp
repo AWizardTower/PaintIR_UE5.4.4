@@ -129,7 +129,7 @@ void UMeshManager::LoadMeshes(const FString& AssetPath)
 			}
 		}
 	}
-	// ShowCurrentActorOnly();
+	ShowCurrentActorOnly();
 	SetMaterialForAllActors(BaseMaterial);
 }
 
@@ -152,7 +152,7 @@ AMyStaticMeshActor* UMeshManager::NextActor()
 	if (Actors.Num() == 0) return nullptr;
 
 	CurrentActorIndex = (CurrentActorIndex + 1) % Actors.Num();
-	//ShowCurrentActorOnly();
+	ShowCurrentActorOnly();
 	return Cast<AMyStaticMeshActor>(Actors[CurrentActorIndex]);
 }
 
@@ -161,7 +161,7 @@ AMyStaticMeshActor* UMeshManager::PreviousActor()
 	if (Actors.Num() == 0) return nullptr;
 
 	CurrentActorIndex = (CurrentActorIndex - 1 + Actors.Num()) % Actors.Num();
-	//ShowCurrentActorOnly();
+	ShowCurrentActorOnly();
 	return Cast<AMyStaticMeshActor>(Actors[CurrentActorIndex]);
 }
 
@@ -183,7 +183,7 @@ AMyStaticMeshActor* UMeshManager::FindActorByIndex(int32 Index)
 	{
 		//同样改变了当前actor
 		CurrentActorIndex = Index;
-		//ShowCurrentActorOnly();
+		ShowCurrentActorOnly();
 		return Actors[Index];
 	}
 	return nullptr;

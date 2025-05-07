@@ -64,7 +64,7 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
     {
         float dist = distance(WorldPos, KeyPositions[i].xyz);
     	//float weight = exp(- (dist * dist) / (2.0 * Sigma * Sigma)); // 高斯权重
-    	float Power = 1.0;
+    	float Power = 2.0;
     	float weight = 1.0 / pow(max(dist, epsilon), Power);
 
         valueSum += weight * KeyPositions[i].w;
