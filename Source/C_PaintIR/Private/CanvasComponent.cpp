@@ -85,6 +85,13 @@ UCanvasComponent::UCanvasComponent()
 		IRMaterial = UMaterialInstanceDynamic::Create(IRMaterialAsset.Object, this);
 	}
 	
+	// 加载材质资产
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> DilationMaterialAsset(TEXT("Material'/Game/Dilation/M_Dilation.M_Dilation'"));
+	if (DilationMaterialAsset.Succeeded())
+	{
+		DilationMaterial = UMaterialInstanceDynamic::Create(DilationMaterialAsset.Object, this);
+	}
+	
 	// 构造函数中
 	static ConstructorHelpers::FObjectFinder<UTextureRenderTarget2D> RTAsset(TEXT("TextureRenderTarget2D'/Game/UI/RT_IRTexturePre.RT_IRTexturePre'"));
 	if (RTAsset.Succeeded())
@@ -163,11 +170,15 @@ void UCanvasComponent::InitializeForMesh()
 {
 	int32 TextureSize = GlobalSettingsManager->GetTextureSizeValue();
 	if (!MeshComponent) return;
-	UE_LOG(LogTemp, Log, TEXT("初始化了组件"));
 	RenderTarget = NewObject<UTextureRenderTarget2D>(this);
 	RenderTarget->InitAutoFormat(TextureSize, TextureSize);
 	RenderTarget->ClearColor = FLinearColor::Black;
 	RenderTarget->UpdateResourceImmediate();
+
+	TargetRenderTarget = NewObject<UTextureRenderTarget2D>(this);
+	TargetRenderTarget->InitAutoFormat(TextureSize, TextureSize);
+	TargetRenderTarget->ClearColor = FLinearColor::Black;
+	TargetRenderTarget->UpdateResourceImmediate();
 	
 	SceneCapture->TextureTarget = RenderTarget;
 	SceneCapture->OrthoWidth = TextureSize; 
@@ -205,9 +216,13 @@ void UCanvasComponent::InitializeForMesh()
 		// 确保不显示脏数据
 		UKismetRenderingLibrary::ClearRenderTarget2D(this, RenderTarget, FLinearColor::Black);
 	}
+	
+	FString Name = FString::Printf(TEXT("Dilation_%s"), *MeshComponent->GetStaticMesh()->GetName());
+	DilationMaterial->Rename(*Name);
 
+	UE_LOG(LogTemp, Log, TEXT("初始化了组件"));
 	// CaptureWithUnwrapAndRestore();
-	//如果不再每次展开了，就不能更新纹理了，显然对于每一个画布都需要单独的rendertarget实例了
+	// 如果不再每次展开了，就不能更新纹理了，显然对于每一个画布都需要单独的rendertarget实例了
 }
 
 void UCanvasComponent::ApplyTextureSize()
@@ -256,6 +271,8 @@ void UCanvasComponent::ApplyTextureSize()
     
 	// 清空一下渲染目标，防止脏数据
 	UKismetRenderingLibrary::ClearRenderTarget2D(this, RenderTarget, FLinearColor::Black);
+
+	//得重新生成一下初始纹理吧
 }
 
 
@@ -270,7 +287,7 @@ void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value)
 
 	UE_LOG(LogTemp, Log, TEXT("Clicked at local position: %s, and current value is :%f"), *LocalLocation.ToString(), Value);
 
-	DrawnPoints.Add(LocalLocation, Value);
+	DrawnPoints.Add(LocalPointLocation, Value);
 
 	// 可视化关键点
 	if (KeyPointVisualizer)
@@ -278,6 +295,7 @@ void UCanvasComponent::DrawPoint(const FVector& WorldLocation, float Value)
 		KeyPointVisualizer->AddKeyPoint(LocalPointLocation, Value);
 	}
 
+	//SceneCapture->CaptureScene();
 	// 然后直接刷新纹理
 	GenerateTextureFromDrawnPoints();
 }
@@ -300,7 +318,7 @@ void UCanvasComponent::GenerateTextureFromDrawnPoints()
     //SceneCapture->CaptureScene();
 	
     // 3. 开始生成纹理
-    UTextureRenderTarget2D* LocalRenderTarget = DefaultRenderTarget;
+    UTextureRenderTarget2D* LocalRenderTarget = TargetRenderTarget;
     TMap<FVector, float> LocalDrawnPoints = DrawnPoints;
     FVector BoxExtent = MeshComponent->Bounds.BoxExtent * 2;
 
@@ -518,9 +536,9 @@ void UCanvasComponent::GenerateTextureFromDrawnPoints()
 
 void UCanvasComponent::ModifyPointValue(const FVector& WorldLocation, float NewValue)
 {
-	if (DrawnPoints.Contains(WorldLocation-GetComponentTransform().InverseTransformPosition(MeshComponent->Bounds.Origin)))
+	if (DrawnPoints.Contains(WorldLocation))
 	{
-		DrawnPoints[WorldLocation-GetComponentTransform().InverseTransformPosition(MeshComponent->Bounds.Origin)] = NewValue;
+		DrawnPoints[WorldLocation] = NewValue;
 		//UE_LOG(LogTemp, Log, TEXT("找到了这个节点"));
 	}
 
@@ -529,9 +547,9 @@ void UCanvasComponent::ModifyPointValue(const FVector& WorldLocation, float NewV
 
 void UCanvasComponent::RemovePoint(const FVector& WorldLocation)
 {
-	if (DrawnPoints.Contains(WorldLocation-GetComponentTransform().InverseTransformPosition(MeshComponent->Bounds.Origin)))
+	if (DrawnPoints.Contains(WorldLocation))
 	{
-		DrawnPoints.Remove(WorldLocation-GetComponentTransform().InverseTransformPosition(MeshComponent->Bounds.Origin));
+		DrawnPoints.Remove(WorldLocation);
 		UE_LOG(LogTemp, Log, TEXT("删除了这个节点"));
 	}
 	
@@ -709,6 +727,64 @@ TArray<UMaterialInterface*> UCanvasComponent::ApplyUnwrapMaterial()
 	}
 
 	return OriginalMaterialsArray;
+}
+
+void UCanvasComponent::UnwarpUV()
+{
+	if (MeshComponent && UnwrapMaterial)
+	{
+		int32 MaterialCount = MeshComponent->GetNumMaterials();
+		
+		for (int32 Index = 0; Index < MaterialCount; ++Index)
+		{
+			MeshComponent->SetMaterial(Index, UnwrapMaterial);
+		}
+	}
+	SceneCapture->CaptureScene();
+
+	if (DilationMaterial && RenderTarget)
+	{
+		// 设置名为 "RenderTex" 的 TextureObject 参数为当前的 RenderTarget
+		DilationMaterial->SetTextureParameterValue(FName("Tex"), RenderTarget);
+	}
+
+	// 为什么直接换是没延展的版本？
+	
+	// // 获取网格体的材质数量
+	// int32 SlotCount = MeshComponent->GetNumMaterials();
+	//
+	// // 遍历所有材质槽，应用动态材质
+	// for (int32 i = 0; i < SlotCount; ++i)
+	// {
+	// 	MeshComponent->SetMaterial(i, DilationMaterial);
+	// }
+
+	// 材质是可以绘制到rendertarget上，但应用在模型表面的材质不行吧
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	UKismetRenderingLibrary::DrawMaterialToRenderTarget(
+		World,
+		TargetRenderTarget,
+		DilationMaterial
+	);
+
+	// 笑死了，什么生命周期问题，前两个模型没捕捉到内容，但运行时启动两次就能解决
+	UE_LOG(LogTemp, Warning, TEXT("展UV被调用了！"));
+	
+	FString SaveDir = FPaths::ProjectContentDir() + TEXT("Captured/");
+	
+	// 使用 MeshComponent 名称作为文件名（并加上 .png）
+	FString MeshName = MeshComponent->GetStaticMesh()->GetName();
+	UE_LOG(LogTemp, Log, TEXT("Mesh Name: %s"), *MeshName);
+	FString FileName = FString::Printf(TEXT("%s.png"), *MeshName);
+	
+	UKismetRenderingLibrary::ExportRenderTarget(
+		this,
+		TargetRenderTarget,
+		SaveDir,
+		FileName
+	);
 }
 
 void UCanvasComponent::CaptureWithUnwrapAndRestore()

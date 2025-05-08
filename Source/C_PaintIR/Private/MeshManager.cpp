@@ -123,6 +123,9 @@ void UMeshManager::LoadMeshes(const FString& AssetPath)
 					// 设置 Actor 所属的文件夹路径
 					NewActor->SetFolderPath(TEXT("Mesh"));
 
+					//果然是调用时没完成初始化，时机不对,需要在InitializeForMesh()后
+					NewActor->CanvasComponent->UnwarpUV();
+					
 					// 更新索引以便下一个 Actor 的位置
 					Index++;
 				}

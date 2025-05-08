@@ -121,6 +121,16 @@ public:
 	
 	void ApplyTextureSize();
 
+	void UnwarpUV();
+
+	UPROPERTY()
+	USceneCaptureComponent2D* SceneCapture;
+
+	UPROPERTY(BlueprintReadWrite)
+	UTextureRenderTarget2D* RenderTarget = nullptr;
+
+	UPROPERTY(BlueprintReadWrite)
+	UTextureRenderTarget2D* TargetRenderTarget = nullptr;
 private:
 	UFUNCTION()
 	void OnGlobalSettingsChanged();
@@ -144,15 +154,12 @@ private:
 	UMaterialInstanceDynamic* UnwrapMaterial;
 
 	UPROPERTY()
+	UMaterialInstanceDynamic* DilationMaterial;
+
+	UPROPERTY()
 	UMaterialInstanceDynamic* IRMaterial;
 
 	void SaveTextureToDiskOnGameThread(FTexture2DRHIRef OutputTexture, const FString& FilePath);
-
-	UPROPERTY()
-	USceneCaptureComponent2D* SceneCapture;
-	
-	UPROPERTY()
-	UTextureRenderTarget2D* RenderTarget = nullptr;
 
 	// 用于指定默认的 RenderTarget 资源
 	UPROPERTY()
